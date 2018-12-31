@@ -25,7 +25,7 @@ struct File
 {
     uint16_t filename_length;
     vector<char> filename;
-    uint32_t file_size;
+    uint64_t file_size;
     unsigned char md5[16];
 };
 
@@ -43,7 +43,7 @@ struct FileListUpdateRequest
 {
     uint8_t type = FILE_LIST_UPDATE_REQUEST;
     uint8_t n_files;
-    vector<Filename> file_list;
+    vector<File> file_list;
     int Write(int sockfd);
     int Read(int sockfd);
 };

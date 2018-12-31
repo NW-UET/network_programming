@@ -55,16 +55,30 @@ int main(int argc, char const *argv[])
     /* print client's IP and port on screen */
     printf("Client's IP: %s\n", inet_ntoa(cliaddr.sin_addr));
     printf("Client's port: %d\n", ntohs(cliaddr.sin_port));
-    
+
     FileListUpdateRequest message;
-    printf("Reading..\n");
+    printf("Reading..");
+    fflush(stdout);
     message.Read(clisock);
-    printf("Read..\n");
-    printf("type = %d\n",message.type);
-    printf("nfiles = %d\n",message.n_files);
-    printf("filename_length = %d\n",message.file_list.back().filename_length);
-    printf("filename = %c\n",message.file_list.back().filename.back());
-    
+    printf("Complete\nMessage received:\n");
+    printf("type = %d\n", message.type);
+    printf("nfiles = %d\n", message.n_files);
+    vector<File> file_list = message.file_list;
+    for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
+    {
+        printf("filename_length = %d\n", it->filename_length);
+        vector<char> filename = it->filename;
+        printf("filename = ");
+        for (auto j = filename.begin(); j != filename.end(); j++)
+            printf("%c", *j);
+        printf("\n");
+        printf("file_size = %ld\n", it->file_size);
+        printf("md5 = ");
+        for (int i = 0; i < 16; i++)
+            printf("%0x",it->md5[i]);
+        printf("\n");
+    }
+
     /* close the socket */
     close(clisock);
     close(sockfd);

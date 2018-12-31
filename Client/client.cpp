@@ -23,9 +23,6 @@ int main(int argc, char const *argv[])
     }
     /* connect socket 'sockfd' to server */
     char ipaddr[16] = "127.0.0.1";
-    // printf("Input Server's IP: ");
-    // fgets(ipaddr, 16, stdin);
-    // ipaddr[strlen(ipaddr) - 1] = '\0';
     struct sockaddr_in servaddr; /* server socket addr */
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;                /* use the Internet addr family */
@@ -39,21 +36,24 @@ int main(int argc, char const *argv[])
     
     FileListUpdateRequest message;
     message.n_files = 2;
-    Filename filename;
+    File file;
 
-    filename.filename_length = 2;
-    filename.filename.push_back('a');
-    filename.filename.push_back('b');
-    message.file_list.push_back(filename);
+    file.filename_length = 2;
+    file.filename.push_back('a');
+    file.filename.push_back('b');
+    file.file_size = 3521;
+    for (int i = 0; i < 16; i++) file.md5[i] = i+97;
+    message.file_list.push_back(file);
 
-    filename.filename_length = 5;
-    filename.filename.clear();
-    filename.filename.push_back('b');
-    filename.filename.push_back('c');
-    filename.filename.push_back('1');
-    filename.filename.push_back('D');
-    filename.filename.push_back('6');
-    message.file_list.push_back(filename);
+    file.filename_length = 5;
+    file.filename.clear();
+    file.filename.push_back('b');
+    file.filename.push_back('c');
+    file.filename.push_back('1');
+    file.filename.push_back('D');
+    file.filename.push_back('6');
+    file.file_size = 5672;
+    message.file_list.push_back(file);
 
     message.Write(sockfd);
     
