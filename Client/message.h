@@ -123,6 +123,8 @@ struct DownloadFileResponse
 {
     uint8_t type = DOWNLOAD_FILE_RESPONSE;
     /*no payload have data*/
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 #endif

@@ -45,7 +45,7 @@ int DownloadFileRequest::Read(int sockfd)
 	filename[filename_length] = '\0';
 	this->filename.filename = filename;
     // offset
-	uint32_t offset = this->offset;
+	uint32_t offset;
 	::Read(sockfd, &offset, sizeof(offset));
 	offset = ntohl(offset);
 	this->offset = offset;

@@ -2,7 +2,7 @@
 
 using namespace std;
 
-int ListFilesRequest::Write(int sockfd)
+int DownloadFileRespone::Write(int sockfd)
 {
 	size_t size = sizeof(this->type);
 	// allocate memory
@@ -18,7 +18,7 @@ int ListFilesRequest::Write(int sockfd)
 	return 0;
 }
 
-int ListFilesRequest::Read(int sockfd)
+int DownloadFileRespone::Read(int sockfd)
 {
 	::Read(sockfd, &this->type, sizeof(this->type));
 	
