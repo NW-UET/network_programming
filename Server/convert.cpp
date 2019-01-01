@@ -84,6 +84,16 @@ void uint8_to_uchar(uint8_t* a,unsigned char* b){
     }   
 }
 /**
+ * char[] to uint8[]
+ */
+void char_to_uint8(char* a, uint8_t* b){
+    for(int i = 0; i < 16; i++)
+    {
+        b[i]=(char)a[i];
+    } 
+}
+
+/**
  * vector<char> to uint8[]
  */ 
 void vectorchar_to_uint8(vector<char> a,uint8_t* b){
