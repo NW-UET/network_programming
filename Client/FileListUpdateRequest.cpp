@@ -1,18 +1,5 @@
 #include "message.h"
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
-#include <iostream>
-
-#include <endian.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-
 using namespace std;
 
 int FileListUpdateRequest::Write(int sockfd)
@@ -55,11 +42,7 @@ int FileListUpdateRequest::Write(int sockfd)
         memcpy(ptr, &it->md5[0], sizeof(it->md5));
         ptr = ptr + sizeof(it->md5);
     }
-    printf("size = %ld\n", size);
-    printf("packet = ");
-    for (size_t i = 0; i < size; i++)
-        printf("|%d|", *((char *)begin + i));
-    printf("\n");
+    
     // send packet
     ::Write(sockfd, begin, size);
 

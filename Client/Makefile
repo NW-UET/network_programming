@@ -1,22 +1,25 @@
 CXX = g++
 CXXFLAGS  = -std=c++0x -Wall
 
-SRC = server.cpp client.cpp FileListUpdateRequest.cpp utils.cpp
+SRC = server.cpp client.cpp FileListUpdateRequest.cpp ListHostsRequest.cpp utils.cpp
 OBJ = $(SRC:.cpp=.o)
 
 # the build target executable:
-TARGET = server client FileListUpdateRequest
+TARGET = server client
 
 all: server client
 
-server: FileListUpdateRequest.o server.o utils.o
-	$(CXX) $(CXXFLAGS) FileListUpdateRequest.o server.o utils.o -o server
+server: FileListUpdateRequest.o ListHostsRequest.o server.o utils.o
+	$(CXX) $(CXXFLAGS) FileListUpdateRequest.o ListHostsRequest.o server.o utils.o -o server
 
-client: FileListUpdateRequest.o client.o utils.o
-	$(CXX) $(CXXFLAGS) FileListUpdateRequest.o client.o utils.o -o client
+client: FileListUpdateRequest.o ListHostsRequest.o client.o utils.o
+	$(CXX) $(CXXFLAGS) FileListUpdateRequest.o ListHostsRequest.o client.o utils.o -o client
 
 FileListUpdateRequest.o: FileListUpdateRequest.cpp
 	$(CXX) $(CXXFLAGS) -c FileListUpdateRequest.cpp -o FileListUpdateRequest.o
+
+ListHostsRequest.o: ListHostsRequest.cpp
+	$(CXX) $(CXXFLAGS) -c ListHostsRequest.cpp -o ListHostsRequest.o
 
 server.o: server.cpp
 	$(CXX) $(CXXFLAGS) -c server.cpp -o server.o

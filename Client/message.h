@@ -4,11 +4,13 @@
 #include <cstdint>
 #include <string>
 #include <strings.h>
+#include <cstring>
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
+#include <endian.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -90,7 +92,7 @@ struct ListHostsRequest
 {
     uint8_t type = LIST_HOSTS_REQUEST;
     Filename filename;
-	int Write(int sockfd);
+    int Write(int sockfd);
     int Read(int sockfd);
 };
 

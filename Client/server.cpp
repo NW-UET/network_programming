@@ -71,6 +71,12 @@ int main(int argc, char const *argv[])
         printf("\n");
     }
 
+    ListHostsRequest message2;
+    message2.Read(clisock);
+    printf("type = %d\n", message2.type);
+    printf("filename_length = %d\n", message2.filename.filename_length);
+    cout << message2.filename.filename << endl;
+
     /* close the socket */
     close(clisock);
     close(sockfd);

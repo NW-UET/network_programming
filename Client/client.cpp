@@ -38,6 +38,11 @@ int main(int argc, char const *argv[])
     message.file_list.push_back(file);
 
     message.Write(sockfd);
+
+    ListHostsRequest message2;
+    message2.filename.filename_length = 3;
+    message2.filename.filename = "ghh";
+    message2.Write(sockfd);
     
     /* close the socket */
     close(sockfd);
