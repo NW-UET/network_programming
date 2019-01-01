@@ -114,6 +114,8 @@ struct DownloadFileRequest
     uint8_t type = DOWNLOAD_FILE_REQUEST;
     Filename filename;
     uint32_t offset;
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* DOWNLOAD_FILE_RESPONSE == 7 */
