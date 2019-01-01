@@ -66,3 +66,19 @@ int ListFilesResponse::Read(int sockfd)
 
     return 0;
 }
+
+void ListFilesResponse::print()
+{
+    printf("type = %d\n", this->type);
+    printf("n_files = %d\n", this->n_files);
+    vector<Filename> filename_list = this->filename_list;
+    for (vector<Filename>::iterator it = filename_list.begin(); it != filename_list.end(); ++it)
+    {
+        printf("filename_length = %d\n", it->filename_length);
+        string filename = it->filename;
+        printf("filename = ");
+        cout << filename;
+        printf("\n");
+    }
+    printf("----\n");
+}

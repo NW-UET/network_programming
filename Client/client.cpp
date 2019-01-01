@@ -47,43 +47,18 @@ int main(int argc, char const *argv[])
 
     FileListUpdateResponse message3;
     message3.Read(sockfd);
-    printf("type = %d\n", message3.type);
-    printf("nfiles = %d\n", message3.n_files);
-    vector<Filestatus> filestatus_list = message3.filestatus_list;
-    for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)
-    {
-        printf("filename_length = %d\n", it->filename_length);
-        string filename = it->filename;
-        printf("filename = ");
-        cout << filename;
-        printf("\n");
-        printf("status = %d", it->status);
-        printf("\n");
-    }
+    message3.print();
 
     ListFilesResponse message4;
     message4.Read(sockfd);
-    printf("type = %d\n", message4.type);
-    printf("nfiles = %d\n", message4.n_files);
-    vector<Filename> filename_list = message4.filename_list;
-    for (vector<Filename>::iterator it = filename_list.begin(); it != filename_list.end(); ++it)
-    {
-        printf("filename_length = %d\n", it->filename_length);
-        string filename = it->filename;
-        printf("filename = ");
-        cout << filename;
-        printf("\n");
-    }
+    message4.print();
 
     ListHostsResponse message5;
     message5.Read(sockfd);
-    printf("type = %d\n", message5.type);
-    printf("nhosts = %d\n", message5.n_hosts);
-    vector<uint32_t> IP_addr_list = message5.IP_addr_list;
-    for (vector<uint32_t>::iterator it = IP_addr_list.begin(); it != IP_addr_list.end(); ++it)
-    {
-        printf("ip_addr = %u\n",*it);
-    }
+    message5.print();
+
+    ListFilesRequest message6;
+    message6.Write(sockfd);
 
     /* close the socket */
     close(sockfd);

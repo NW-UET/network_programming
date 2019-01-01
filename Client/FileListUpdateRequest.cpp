@@ -42,7 +42,7 @@ int FileListUpdateRequest::Write(int sockfd)
         memcpy(ptr, &it->md5[0], sizeof(it->md5));
         ptr = ptr + sizeof(it->md5);
     }
-    
+
     // send packet
     ::Write(sockfd, begin, size);
 
@@ -82,4 +82,25 @@ int FileListUpdateRequest::Read(int sockfd)
     }
 
     return 0;
+}
+
+void FileListUpdateRequest::print()
+{
+    printf("type = %d\n", this->type);
+    printf("n_files = %d\n", this->n_files);
+    vector<File> file_list = this->file_list;
+    for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
+    {
+        printf("filename_length = %d\n", it->filename_length);
+        string filename = it->filename;
+        printf("filename = ");
+        cout << filename;
+        printf("\n");
+        printf("file_size = %ld\n", it->file_size);
+        printf("md5 = ");
+        for (int i = 0; i < 16; i++)
+            printf("%0x", it->md5[i]);
+        printf("\n");
+    }
+    printf("----\n");
 }

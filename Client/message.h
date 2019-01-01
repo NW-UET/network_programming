@@ -61,6 +61,7 @@ struct FileListUpdateRequest
     vector<File> file_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    void print();
 };
 
 /* FILE_LIST_UPDATE_RESPONSE == 1 */
@@ -71,6 +72,7 @@ struct FileListUpdateResponse
     vector<Filestatus> filestatus_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    void print();
 };
 
 /* LIST_FILES_REQUEST == 2 */
@@ -79,9 +81,8 @@ struct ListFilesRequest
     uint8_t type = LIST_FILES_REQUEST;
     int Write(int sockfd);
     int Read(int sockfd);
+    void print();
     /*no payload no data*/
-    int Write(int sockfd);
-    int Read(int sockfd);
 };
 
 /* LIST_FILES_RESPONSE == 3 */
@@ -92,6 +93,7 @@ struct ListFilesResponse
     vector<Filename> filename_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    void print();
 };
 
 /* LIST_HOSTS_REQUEST == 4 */
@@ -101,6 +103,7 @@ struct ListHostsRequest
     Filename filename;
     int Write(int sockfd);
     int Read(int sockfd);
+    void print();
 };
 
 /* LIST_HOSTS_RESPONSE == 5 */
@@ -111,6 +114,7 @@ struct ListHostsResponse
     vector<uint32_t> IP_addr_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    void print();
 };
 
 /* client - client*/

@@ -74,3 +74,21 @@ int FileListUpdateResponse::Read(int sockfd)
 
     return 0;
 }
+
+void FileListUpdateResponse::print()
+{
+    printf("type = %d\n", this->type);
+    printf("n_files = %d\n", this->n_files);
+    vector<Filestatus> filestatus_list = this->filestatus_list;
+    for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)
+    {
+        printf("filename_length = %d\n", it->filename_length);
+        string filename = it->filename;
+        printf("filename = ");
+        cout << filename;
+        printf("\n");
+        printf("status = %d", it->status);
+        printf("\n");
+    }
+    printf("----\n");
+}

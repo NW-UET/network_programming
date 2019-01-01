@@ -45,3 +45,11 @@ int ListHostsRequest::Read(int sockfd)
 
     return 0;
 }
+
+void ListHostsRequest::print()
+{
+    printf("type = %d\n", this->type);
+    printf("filename_length = %d\n", this->filename.filename_length);
+    cout << this->filename.filename << endl;
+    printf("----\n");
+}
