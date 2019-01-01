@@ -1,15 +1,3 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <cstdio>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <cstdlib>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <pthread.h>
 #include "message.h"
 
 int main(int argc, char const *argv[])
@@ -39,19 +27,13 @@ int main(int argc, char const *argv[])
     File file;
 
     file.filename_length = 2;
-    file.filename.push_back('a');
-    file.filename.push_back('b');
+    file.filename = "ab";
     file.file_size = 3521;
-    for (int i = 0; i < 16; i++) file.md5[i] = i+97;
+    for (int i = 0; i < 16; i++) file.md5[i] = i+65;
     message.file_list.push_back(file);
 
     file.filename_length = 5;
-    file.filename.clear();
-    file.filename.push_back('b');
-    file.filename.push_back('c');
-    file.filename.push_back('1');
-    file.filename.push_back('D');
-    file.filename.push_back('6');
+    file.filename = "bc1D6";
     file.file_size = 5672;
     message.file_list.push_back(file);
 

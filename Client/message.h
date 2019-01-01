@@ -2,7 +2,18 @@
 #define message_h
 
 #include <cstdint>
+#include <string>
+#include <strings.h>
 #include <vector>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+
+#include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #define FILE_LIST_UPDATE_REQUEST 0
 #define FILE_LIST_UPDATE_RESPONSE 1
@@ -15,16 +26,19 @@
 
 using namespace std;
 
+void Write(int sockfd, const void *buff, size_t n);
+void Read(int sockfd, void *buff, size_t n);
+
 struct Filename
 {
     uint16_t filename_length;
-    vector<char> filename;
+    string filename;
 };
 
 struct File
 {
     uint16_t filename_length;
-    vector<char> filename;
+    string filename;
     uint64_t file_size;
     unsigned char md5[16];
 };
@@ -32,7 +46,7 @@ struct File
 struct Filestatus
 {
     uint16_t filename_length;
-    vector<char> filename;
+    string filename;
     uint8_t status;
 };
 

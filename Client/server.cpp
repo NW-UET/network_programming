@@ -1,10 +1,3 @@
-#include <sys/socket.h>
-#include <cstdlib>
-#include <cstdio>
-#include <string.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include "message.h"
 
 #define BLOCK_SIZE 2048
@@ -67,10 +60,9 @@ int main(int argc, char const *argv[])
     for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
     {
         printf("filename_length = %d\n", it->filename_length);
-        vector<char> filename = it->filename;
+        string filename = it->filename;
         printf("filename = ");
-        for (auto j = filename.begin(); j != filename.end(); j++)
-            printf("%c", *j);
+        cout << filename;
         printf("\n");
         printf("file_size = %ld\n", it->file_size);
         printf("md5 = ");
