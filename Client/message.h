@@ -77,6 +77,8 @@ struct ListFilesRequest
 {
     uint8_t type = LIST_FILES_REQUEST;
     /*no payload no data*/
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* LIST_FILES_RESPONSE == 3 */
