@@ -29,6 +29,7 @@ using namespace std;
 
 void Write(int sockfd, const void *buff, size_t n);
 void Read(int sockfd, void *buff, size_t n);
+uint8_t ReadHeader(int sockfd);
 
 struct Filename
 {
@@ -61,6 +62,7 @@ struct FileListUpdateRequest
     vector<File> file_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 
@@ -72,6 +74,7 @@ struct FileListUpdateResponse
     vector<Filestatus> filestatus_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 
@@ -79,10 +82,11 @@ struct FileListUpdateResponse
 struct ListFilesRequest
 {
     uint8_t type = LIST_FILES_REQUEST;
+    /*no payload no data*/
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
-    /*no payload no data*/
 };
 
 /* LIST_FILES_RESPONSE == 3 */
@@ -93,6 +97,7 @@ struct ListFilesResponse
     vector<Filename> filename_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 
@@ -103,6 +108,7 @@ struct ListHostsRequest
     Filename filename;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 
@@ -114,6 +120,7 @@ struct ListHostsResponse
     vector<uint32_t> IP_addr_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 
@@ -127,6 +134,7 @@ struct DownloadFileRequest
     uint32_t offset;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 
@@ -137,6 +145,7 @@ struct DownloadFileResponse
     /*no payload have data*/
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
     void print();
 };
 

@@ -28,10 +28,8 @@ int ListHostsRequest::Write(int sockfd)
     return 0;
 }
 
-int ListHostsRequest::Read(int sockfd)
+int ListHostsRequest::ReadPayload(int sockfd)
 {
-    // type
-    ::Read(sockfd, &this->type, sizeof(this->type));
     // filename.filename_length
     uint16_t filename_length;
     ::Read(sockfd, &filename_length, sizeof(filename_length));
@@ -42,6 +40,15 @@ int ListHostsRequest::Read(int sockfd)
     ::Read(sockfd, &filename[0], filename_length);
     filename[filename_length] = '\0';
     this->filename.filename = filename;
+
+    return 0;
+}
+
+int ListHostsRequest::Read(int sockfd)
+{
+    if (this->type != ::ReadHeader(sockfd))
+        return 0;
+    this->ReadPayload(sockfd);
 
     return 0;
 }

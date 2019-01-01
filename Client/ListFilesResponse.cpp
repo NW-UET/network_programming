@@ -40,10 +40,8 @@ int ListFilesResponse::Write(int sockfd)
     return 0;
 }
 
-int ListFilesResponse::Read(int sockfd)
+int ListFilesResponse::ReadPayload(int sockfd)
 {
-    // type
-    ::Read(sockfd, &this->type, sizeof(this->type));
     // n_files
     ::Read(sockfd, &this->n_files, sizeof(this->n_files));
     // filename_list
@@ -63,6 +61,15 @@ int ListFilesResponse::Read(int sockfd)
         filename.filename = filenameStr;
         this->filename_list.push_back(filename);
     }
+
+    return 0;
+}
+
+int ListFilesResponse::Read(int sockfd)
+{
+    if (this->type != ::ReadHeader(sockfd))
+        return 0;
+    this->ReadPayload(sockfd);
 
     return 0;
 }

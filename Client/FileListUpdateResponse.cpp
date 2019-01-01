@@ -44,11 +44,8 @@ int FileListUpdateResponse::Write(int sockfd)
     return 0;
 }
 
-int FileListUpdateResponse::Read(int sockfd)
+int FileListUpdateResponse::ReadPayload(int sockfd)
 {
-    // type
-    ::Read(sockfd, &this->type, sizeof(this->type));
-
     // n_files
     ::Read(sockfd, &this->n_files, sizeof(this->n_files));
 
@@ -71,6 +68,15 @@ int FileListUpdateResponse::Read(int sockfd)
         ::Read(sockfd, &filestatus.status, sizeof(filestatus.status));
         this->filestatus_list.push_back(filestatus);
     }
+
+    return 0;
+}
+
+int FileListUpdateResponse::Read(int sockfd)
+{
+    if (this->type != ::ReadHeader(sockfd))
+        return 0;
+    this->ReadPayload(sockfd);
 
     return 0;
 }

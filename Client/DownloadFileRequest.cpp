@@ -31,10 +31,8 @@ int DownloadFileRequest::Write(int sockfd)
 	return 0;
 }
 
-int DownloadFileRequest::Read(int sockfd)
+int DownloadFileRequest::ReadPayload(int sockfd)
 {
-	// type
-	::Read(sockfd, &this->type, sizeof(this->type));
 	// filename.filename_length
 	uint16_t filename_length;
 	::Read(sockfd, &filename_length, sizeof(filename_length));
@@ -50,6 +48,15 @@ int DownloadFileRequest::Read(int sockfd)
 	::Read(sockfd, &offset, sizeof(offset));
 	offset = ntohl(offset);
 	this->offset = offset;
+
+	return 0;
+}
+
+int DownloadFileRequest::Read(int sockfd)
+{
+	if (this->type != ::ReadHeader(sockfd))
+		return 0;
+	this->ReadPayload(sockfd);
 
 	return 0;
 }

@@ -32,10 +32,8 @@ int ListHostsResponse::Write(int sockfd)
     return 0;
 }
 
-int ListHostsResponse::Read(int sockfd)
+int ListHostsResponse::ReadPayload(int sockfd)
 {
-    // type
-    ::Read(sockfd, &this->type, sizeof(this->type));
     // n_hosts
     ::Read(sockfd, &this->n_hosts, sizeof(this->n_hosts));
     // IP_addr_list
@@ -46,6 +44,15 @@ int ListHostsResponse::Read(int sockfd)
         ::Read(sockfd, &IP_addr, sizeof(IP_addr));
         this->IP_addr_list.push_back(ntohl(IP_addr));
     }
+
+    return 0;
+}
+
+int ListHostsResponse::Read(int sockfd)
+{
+    if (this->type != ::ReadHeader(sockfd))
+        return 0;
+    this->ReadPayload(sockfd);
 
     return 0;
 }

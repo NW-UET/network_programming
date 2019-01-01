@@ -47,3 +47,12 @@ void Read(int sockfd, void *buff, size_t n)
         }
     }
 }
+
+uint8_t ReadHeader(int sockfd)
+{
+    // type
+    uint8_t type;
+    ::Read(sockfd, &type, sizeof(type));
+
+    return type;
+}

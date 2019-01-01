@@ -18,9 +18,17 @@ int ListFilesRequest::Write(int sockfd)
     return 0;
 }
 
+int ListFilesRequest::ReadPayload(int sockfd)
+{
+    return 0;
+}
+
 int ListFilesRequest::Read(int sockfd)
 {
-    ::Read(sockfd, &this->type, sizeof(this->type));
+    if (this->type != ::ReadHeader(sockfd))
+        return 0;
+    this->ReadPayload(sockfd);
+
     return 0;
 }
 

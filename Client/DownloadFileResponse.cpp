@@ -19,10 +19,16 @@ int DownloadFileResponse::Write(int sockfd)
 	return 0;
 }
 
+int DownloadFileResponse::ReadPayload(int sockfd)
+{
+	return 0;
+}
+
 int DownloadFileResponse::Read(int sockfd)
 {
-	// type
-	::Read(sockfd, &this->type, sizeof(this->type));
+	if (this->type != ::ReadHeader(sockfd))
+		return 0;
+	this->ReadPayload(sockfd);
 
 	return 0;
 }
