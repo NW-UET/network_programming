@@ -10,7 +10,11 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <pthread.h>
+#include <cstdint>
 #include "package.h"
+#include "convert.h"
+using namespace package;
+static void *doit(void *arg);
 int main(int argc, char const *argv[])
 {
     //created argument for thread
@@ -92,8 +96,32 @@ int main(int argc, char const *argv[])
     return 0;
 }
 static void *doit(void *arg){
+	int newfd= *((int*)arg);
+	pthread_detach(pthread_self());
+	free(arg);
     //read data received
-    
-    //process for each kind of data
+	int nbytes;
+	char buf_char[1000];
+    if((nbytes=read(newfd,buf_char,sizeof(buf_char)))<0){
+		perror("read");
+		exit(0);
+	}
+	printf("nbytes = %d\n",nbytes);
+	// nho delete buf
+	// uint8_t* buf=new uint8_t[nbytes];
+	// char_to_uint8(buf_char,buf);
+	char* buf=buf_char;
+	if (buf[0]==1) {
+		printf("xu ly update list file\n");
+		ListUpdate package(buf);
+		package.printObjectPackage();
+	}else if(buf[0]==3){
+		printf("xu ly request list files\n");
+	}else if(buf[0]==5){
+		printf("xu ly request list hosts\n");
+	}else{
+		delete buf;
+		exit(0);
+	}
     
 }
