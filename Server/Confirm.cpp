@@ -50,4 +50,4 @@ uint8_t* Confirm::createPackage(){
     return packageReturn;
 }
 
-#endif /* Confirm_cpp  */ 
+#endif /* Confirm_cpp  */
