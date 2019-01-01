@@ -76,6 +76,8 @@ struct ListHostsRequest
 {
     uint8_t type = LIST_HOSTS_REQUEST;
     Filename filename;
+	int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* LIST_HOSTS_RESPONSE == 5 */
