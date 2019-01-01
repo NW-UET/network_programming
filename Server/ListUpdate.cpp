@@ -9,7 +9,7 @@ using namespace package;
 /**
  * ListUpdate
  */
-ListUpdate::ListUpdate(uint8_t package[]){
+ListUpdate::ListUpdate(char* package){
     type=package[0];
     numOfFileUpdate=package[1];
     int indexNow=2;

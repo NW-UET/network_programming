@@ -23,7 +23,7 @@ namespace package
         uint8_t numOfFileUpdate;
         vector<DetailOfUpdateFiles> detailOfUpdateFile;
         public:
-        ListUpdate(uint8_t[]);
+        ListUpdate(char*);
         uint8_t getType();
         uint8_t getNumOfFileUpdate();
         vector<DetailOfUpdateFiles> getDetailOfUpdateFile();
