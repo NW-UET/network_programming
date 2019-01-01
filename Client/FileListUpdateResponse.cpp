@@ -2,17 +2,16 @@
 
 using namespace std;
 
-int FileListUpdateRequest::Write(int sockfd)
+int FileListUpdateResponse::Write(int sockfd)
 {
     // size
     size_t size = sizeof(this->type) + sizeof(this->n_files);
-    vector<File> file_list = this->file_list;
-    for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
+    vector<Filestatus> filestatus_list = this->filestatus_list;
+    for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)
     {
         size += sizeof(it->filename_length);
-        size += sizeof(it->file_size);
         size += it->filename.size();
-        size += sizeof(it->md5);
+        size += sizeof(it->status);
     }
     // allocate memory
     char *begin = (char *)malloc(size);
@@ -24,23 +23,19 @@ int FileListUpdateRequest::Write(int sockfd)
     // n_files
     memcpy(ptr, &this->n_files, sizeof(this->n_files));
     ptr = ptr + sizeof(this->n_files);
-    // file_list
-    for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
+    // filestatus_list
+    for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)
     {
-        // file.filename_length
+        // filestatus.filename_length
         uint16_t filename_length = htons(it->filename_length);
         memcpy(ptr, &filename_length, sizeof(filename_length));
         ptr = ptr + sizeof(filename_length);
-        // file.filename
+        // filestatus.filename
         memcpy(ptr, it->filename.data(), it->filename.size());
         ptr = ptr + it->filename.size();
-        // file.file_size
-        uint64_t file_size = htobe64(it->file_size);
-        memcpy(ptr, &file_size, sizeof(file_size));
-        ptr = ptr + sizeof(file_size);
-        // file.md5[]
-        memcpy(ptr, &it->md5[0], sizeof(it->md5));
-        ptr = ptr + sizeof(it->md5);
+        // filestatus.status
+        memcpy(ptr, &it->status, sizeof(it->status));
+        ptr = ptr + sizeof(it->status);
     }
 
     // send packet
@@ -49,39 +44,35 @@ int FileListUpdateRequest::Write(int sockfd)
     return 0;
 }
 
-int FileListUpdateRequest::ReadPayload(int sockfd)
+int FileListUpdateResponse::ReadPayload(int sockfd)
 {
     // n_files
     ::Read(sockfd, &this->n_files, sizeof(this->n_files));
 
-    // file_list
+    // filestatus_list
     for (int k = 0; k < this->n_files; k++)
     {
-        // file
-        File file;
-        // file.file_length
+        // filestatus
+        Filestatus filestatus;
+        // filestatus.file_length
         uint16_t filename_length;
         ::Read(sockfd, &filename_length, sizeof(filename_length));
         filename_length = ntohs(filename_length);
-        file.filename_length = filename_length;
-        // file.filename
+        filestatus.filename_length = filename_length;
+        // filestatus.filename
         char filename[filename_length + 1];
         ::Read(sockfd, &filename[0], filename_length);
         filename[filename_length] = '\0';
-        file.filename = filename;
-        // file.file_size
-        uint64_t file_size;
-        ::Read(sockfd, &file_size, sizeof(file_size));
-        file.file_size = be64toh(file_size);
-        // file.md5[16]
-        ::Read(sockfd, &file.md5[0], sizeof(file.md5));
-        this->file_list.push_back(file);
+        filestatus.filename = filename;
+        // filestatus.status
+        ::Read(sockfd, &filestatus.status, sizeof(filestatus.status));
+        this->filestatus_list.push_back(filestatus);
     }
 
     return 0;
 }
 
-int FileListUpdateRequest::Read(int sockfd)
+int FileListUpdateResponse::Read(int sockfd)
 {
     if (this->type != ::ReadHeader(sockfd))
         return 0;
@@ -90,22 +81,19 @@ int FileListUpdateRequest::Read(int sockfd)
     return 0;
 }
 
-void FileListUpdateRequest::print()
+void FileListUpdateResponse::print()
 {
     printf("type = %d\n", this->type);
     printf("n_files = %d\n", this->n_files);
-    vector<File> file_list = this->file_list;
-    for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
+    vector<Filestatus> filestatus_list = this->filestatus_list;
+    for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)
     {
         printf("filename_length = %d\n", it->filename_length);
         string filename = it->filename;
         printf("filename = ");
         cout << filename;
         printf("\n");
-        printf("file_size = %ld\n", it->file_size);
-        printf("md5 = ");
-        for (int i = 0; i < 16; i++)
-            printf("%0x", it->md5[i]);
+        printf("status = %d", it->status);
         printf("\n");
     }
     printf("----\n");

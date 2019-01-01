@@ -1,10 +1,3 @@
-#include <sys/socket.h>
-#include <cstdlib>
-#include <cstdio>
-#include <string.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include "message.h"
 
 #define BLOCK_SIZE 2048
@@ -56,28 +49,60 @@ int main(int argc, char const *argv[])
     printf("Client's IP: %s\n", inet_ntoa(cliaddr.sin_addr));
     printf("Client's port: %d\n", ntohs(cliaddr.sin_port));
 
-    FileListUpdateRequest message;
-    printf("Reading..");
+    printf("Reading..\n");
     fflush(stdout);
+
+    FileListUpdateRequest message;
     message.Read(clisock);
-    printf("Complete\nMessage received:\n");
-    printf("type = %d\n", message.type);
-    printf("nfiles = %d\n", message.n_files);
-    vector<File> file_list = message.file_list;
-    for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
-    {
-        printf("filename_length = %d\n", it->filename_length);
-        vector<char> filename = it->filename;
-        printf("filename = ");
-        for (auto j = filename.begin(); j != filename.end(); j++)
-            printf("%c", *j);
-        printf("\n");
-        printf("file_size = %ld\n", it->file_size);
-        printf("md5 = ");
-        for (int i = 0; i < 16; i++)
-            printf("%0x",it->md5[i]);
-        printf("\n");
-    }
+    message.print();
+
+    ListHostsRequest message2;
+    message2.Read(clisock);
+    message2.print();
+
+    FileListUpdateResponse message3;
+    message3.n_files = 2;
+    Filestatus filestatus;
+    filestatus.filename_length = 7;
+    filestatus.filename = "abcdefg";
+    filestatus.status = 0;
+    message3.filestatus_list.push_back(filestatus);
+    filestatus.filename_length = 2;
+    filestatus.filename = "ae";
+    filestatus.status = 1;
+    message3.filestatus_list.push_back(filestatus);
+    message3.Write(clisock);
+
+    ListFilesResponse message4;
+    message4.n_files = 2;
+    Filesize filesize;
+    filesize.filename_length = 3;
+    filesize.filename = "uio";
+    filesize.file_size = 5413;
+    message4.filesize_list.push_back(filesize);
+    filesize.filename_length = 6;
+    filesize.filename = "rtypoi";
+    filesize.file_size = 6789;
+    message4.filesize_list.push_back(filesize);
+    message4.Write(clisock);
+
+    ListHostsResponse message5;
+    message5.n_hosts = 3;
+    message5.IP_addr_list.push_back(2147483648);
+    message5.IP_addr_list.push_back(2684354560);
+    message5.IP_addr_list.push_back(2684356608);
+    message5.Write(clisock);
+
+    ListFilesRequest message6;
+    message6.Read(clisock);
+    message6.print();
+
+    DownloadFileRequest message7;
+    message7.Read(clisock);
+    message7.print();
+
+    DownloadFileResponse message8;
+    message8.Write(clisock);
 
     /* close the socket */
     close(clisock);

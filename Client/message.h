@@ -2,7 +2,19 @@
 #define message_h
 
 #include <cstdint>
+#include <string>
+#include <cstring>
 #include <vector>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+
+#include <endian.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #define FILE_LIST_UPDATE_REQUEST 0
 #define FILE_LIST_UPDATE_RESPONSE 1
@@ -15,24 +27,35 @@
 
 using namespace std;
 
+void Write(int sockfd, const void *buff, size_t n);
+void Read(int sockfd, void *buff, size_t n);
+uint8_t ReadHeader(int sockfd);
+
 struct Filename
 {
     uint16_t filename_length;
-    vector<char> filename;
+    string filename;
 };
 
 struct File
 {
     uint16_t filename_length;
-    vector<char> filename;
+    string filename;
     uint64_t file_size;
     unsigned char md5[16];
+};
+
+struct Filesize
+{
+    uint16_t filename_length;
+    string filename;
+    uint64_t file_size;
 };
 
 struct Filestatus
 {
     uint16_t filename_length;
-    vector<char> filename;
+    string filename;
     uint8_t status;
 };
 
@@ -46,6 +69,8 @@ struct FileListUpdateRequest
     vector<File> file_list;
     int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* FILE_LIST_UPDATE_RESPONSE == 1 */
@@ -54,6 +79,10 @@ struct FileListUpdateResponse
     uint8_t type = FILE_LIST_UPDATE_RESPONSE;
     uint8_t n_files;
     vector<Filestatus> filestatus_list;
+    int Write(int sockfd);
+    int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* LIST_FILES_REQUEST == 2 */
@@ -61,6 +90,10 @@ struct ListFilesRequest
 {
     uint8_t type = LIST_FILES_REQUEST;
     /*no payload no data*/
+    int Write(int sockfd);
+    int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* LIST_FILES_RESPONSE == 3 */
@@ -68,7 +101,11 @@ struct ListFilesResponse
 {
     uint8_t type = LIST_FILES_RESPONSE;
     uint8_t n_files;
-    vector<Filename> filename_list;
+    vector<Filesize> filesize_list;
+    int Write(int sockfd);
+    int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* LIST_HOSTS_REQUEST == 4 */
@@ -76,8 +113,10 @@ struct ListHostsRequest
 {
     uint8_t type = LIST_HOSTS_REQUEST;
     Filename filename;
-	int Write(int sockfd);
+    int Write(int sockfd);
     int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* LIST_HOSTS_RESPONSE == 5 */
@@ -86,6 +125,10 @@ struct ListHostsResponse
     uint8_t type = LIST_HOSTS_RESPONSE;
     uint8_t n_hosts;
     vector<uint32_t> IP_addr_list;
+    int Write(int sockfd);
+    int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* client - client*/
@@ -96,6 +139,10 @@ struct DownloadFileRequest
     uint8_t type = DOWNLOAD_FILE_REQUEST;
     Filename filename;
     uint32_t offset;
+    int Write(int sockfd);
+    int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 /* DOWNLOAD_FILE_RESPONSE == 7 */
@@ -103,6 +150,10 @@ struct DownloadFileResponse
 {
     uint8_t type = DOWNLOAD_FILE_RESPONSE;
     /*no payload have data*/
+    int Write(int sockfd);
+    int Read(int sockfd);
+    int ReadPayload(int sockfd);
+    void print();
 };
 
 #endif

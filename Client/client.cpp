@@ -1,15 +1,3 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <cstdio>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <cstdlib>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <pthread.h>
 #include "message.h"
 
 int main(int argc, char const *argv[])
@@ -33,30 +21,55 @@ int main(int argc, char const *argv[])
         perror("connect");
         exit(1);
     }
-    
+
     FileListUpdateRequest message;
     message.n_files = 2;
     File file;
 
     file.filename_length = 2;
-    file.filename.push_back('a');
-    file.filename.push_back('b');
+    file.filename = "ab";
     file.file_size = 3521;
-    for (int i = 0; i < 16; i++) file.md5[i] = i+97;
+    for (int i = 0; i < 16; i++)
+        file.md5[i] = i + 65;
     message.file_list.push_back(file);
 
     file.filename_length = 5;
-    file.filename.clear();
-    file.filename.push_back('b');
-    file.filename.push_back('c');
-    file.filename.push_back('1');
-    file.filename.push_back('D');
-    file.filename.push_back('6');
+    file.filename = "bc1D6";
     file.file_size = 5672;
     message.file_list.push_back(file);
 
     message.Write(sockfd);
-    
+
+    ListHostsRequest message2;
+    message2.filename.filename_length = 3;
+    message2.filename.filename = "ghh";
+    message2.Write(sockfd);
+
+    FileListUpdateResponse message3;
+    message3.Read(sockfd);
+    message3.print();
+
+    ListFilesResponse message4;
+    message4.Read(sockfd);
+    message4.print();
+
+    ListHostsResponse message5;
+    message5.Read(sockfd);
+    message5.print();
+
+    ListFilesRequest message6;
+    message6.Write(sockfd);
+
+    DownloadFileRequest message7;
+    message7.filename.filename_length = 3;
+    message7.filename.filename = "hjl";
+    message7.offset = 354;
+    message7.Write(sockfd);
+
+    DownloadFileResponse message8;
+    message8.Read(sockfd);
+    message8.print();
+
     /* close the socket */
     close(sockfd);
     return 0;
