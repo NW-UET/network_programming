@@ -75,13 +75,15 @@ int main(int argc, char const *argv[])
 
     ListFilesResponse message4;
     message4.n_files = 2;
-    Filename filename;
-    filename.filename_length = 3;
-    filename.filename = "uio";
-    message4.filename_list.push_back(filename);
-    filename.filename_length = 6;
-    filename.filename = "rtypoi";
-    message4.filename_list.push_back(filename);
+    Filesize filesize;
+    filesize.filename_length = 3;
+    filesize.filename = "uio";
+    filesize.file_size = 5413;
+    message4.filesize_list.push_back(filesize);
+    filesize.filename_length = 6;
+    filesize.filename = "rtypoi";
+    filesize.file_size = 6789;
+    message4.filesize_list.push_back(filesize);
     message4.Write(clisock);
 
     ListHostsResponse message5;

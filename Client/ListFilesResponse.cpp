@@ -6,11 +6,12 @@ int ListFilesResponse::Write(int sockfd)
 {
     // size
     size_t size = sizeof(this->type) + sizeof(this->n_files);
-    vector<Filename> filename_list = this->filename_list;
-    for (vector<Filename>::iterator it = filename_list.begin(); it != filename_list.end(); ++it)
+    vector<Filesize> filesize_list = this->filesize_list;
+    for (vector<Filesize>::iterator it = filesize_list.begin(); it != filesize_list.end(); ++it)
     {
         size += sizeof(it->filename_length);
         size += it->filename.size();
+        size += sizeof(it->file_size);
     }
     // allocate memory
     char *begin = (char *)malloc(size);
@@ -22,16 +23,20 @@ int ListFilesResponse::Write(int sockfd)
     // n_files
     memcpy(ptr, &this->n_files, sizeof(this->n_files));
     ptr = ptr + sizeof(this->n_files);
-    // filename_list
-    for (vector<Filename>::iterator it = filename_list.begin(); it != filename_list.end(); ++it)
+    // filesize_list
+    for (vector<Filesize>::iterator it = filesize_list.begin(); it != filesize_list.end(); ++it)
     {
-        // filename.filename_length
+        // filesize.filename_length
         uint16_t filename_length = htons(it->filename_length);
         memcpy(ptr, &filename_length, sizeof(filename_length));
         ptr = ptr + sizeof(filename_length);
-        // filename.filename
+        // filesize.filename
         memcpy(ptr, it->filename.data(), it->filename.size());
         ptr = ptr + it->filename.size();
+        // filesize.file_size
+        uint64_t file_size = htobe64(it->file_size);
+        memcpy(ptr, &file_size, sizeof(file_size));
+        ptr = ptr + sizeof(file_size);
     }
 
     // send packet
@@ -44,22 +49,26 @@ int ListFilesResponse::ReadPayload(int sockfd)
 {
     // n_files
     ::Read(sockfd, &this->n_files, sizeof(this->n_files));
-    // filename_list
+    // filesize_list
     for (int k = 0; k < this->n_files; k++)
     {
-        // filename
-        Filename filename;
-        // filename.filename_length
+        // filesize
+        Filesize filesize;
+        // filesize.filename_length
         uint16_t filename_length;
         ::Read(sockfd, &filename_length, sizeof(filename_length));
         filename_length = ntohs(filename_length);
-        filename.filename_length = filename_length;
-        // filename.filename
+        filesize.filename_length = filename_length;
+        // filesize.filename
         char filenameStr[filename_length + 1];
         ::Read(sockfd, &filenameStr[0], filename_length);
         filenameStr[filename_length] = '\0';
-        filename.filename = filenameStr;
-        this->filename_list.push_back(filename);
+        filesize.filename = filenameStr;
+        // filesize.file_size
+        uint64_t file_size;
+        ::Read(sockfd, &file_size, sizeof(file_size));
+        filesize.file_size = be64toh(file_size);
+        this->filesize_list.push_back(filesize);
     }
 
     return 0;
@@ -78,14 +87,14 @@ void ListFilesResponse::print()
 {
     printf("type = %d\n", this->type);
     printf("n_files = %d\n", this->n_files);
-    vector<Filename> filename_list = this->filename_list;
-    for (vector<Filename>::iterator it = filename_list.begin(); it != filename_list.end(); ++it)
+    vector<Filesize> filesize_list = this->filesize_list;
+    for (vector<Filesize>::iterator it = filesize_list.begin(); it != filesize_list.end(); ++it)
     {
         printf("filename_length = %d\n", it->filename_length);
         string filename = it->filename;
         printf("filename = ");
-        cout << filename;
-        printf("\n");
+        cout << filename << endl;
+        printf("file_size = %ld\n", it->file_size);
     }
     printf("----\n");
 }

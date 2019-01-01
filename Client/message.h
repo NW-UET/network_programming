@@ -45,6 +45,13 @@ struct File
     unsigned char md5[16];
 };
 
+struct Filesize
+{
+    uint16_t filename_length;
+    string filename;
+    uint64_t file_size;
+};
+
 struct Filestatus
 {
     uint16_t filename_length;
@@ -94,7 +101,7 @@ struct ListFilesResponse
 {
     uint8_t type = LIST_FILES_RESPONSE;
     uint8_t n_files;
-    vector<Filename> filename_list;
+    vector<Filesize> filesize_list;
     int Write(int sockfd);
     int Read(int sockfd);
     int ReadPayload(int sockfd);
