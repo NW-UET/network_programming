@@ -80,6 +80,8 @@ struct ListFilesRequest
     int Write(int sockfd);
     int Read(int sockfd);
     /*no payload no data*/
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* LIST_FILES_RESPONSE == 3 */
