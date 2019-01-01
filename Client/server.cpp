@@ -52,6 +52,7 @@ int main(int argc, char const *argv[])
     FileListUpdateRequest message;
     printf("Reading..");
     fflush(stdout);
+
     message.Read(clisock);
     printf("Complete\nMessage received:\n");
     printf("type = %d\n", message.type);
@@ -76,6 +77,37 @@ int main(int argc, char const *argv[])
     printf("type = %d\n", message2.type);
     printf("filename_length = %d\n", message2.filename.filename_length);
     cout << message2.filename.filename << endl;
+
+    FileListUpdateResponse message3;
+    message3.n_files = 2;
+    Filestatus filestatus;
+    filestatus.filename_length = 7;
+    filestatus.filename = "abcdefg";
+    filestatus.status = 0;
+    message3.filestatus_list.push_back(filestatus);
+    filestatus.filename_length = 2;
+    filestatus.filename = "ae";
+    filestatus.status = 1;
+    message3.filestatus_list.push_back(filestatus);
+    message3.Write(clisock);
+
+    ListFilesResponse message4;
+    message4.n_files = 2;
+    Filename filename;
+    filename.filename_length = 3;
+    filename.filename = "uio";
+    message4.filename_list.push_back(filename);
+    filename.filename_length = 6;
+    filename.filename = "rtypoi";
+    message4.filename_list.push_back(filename);
+    message4.Write(clisock);
+
+    ListHostsResponse message5;
+    message5.n_hosts = 3;
+    message5.IP_addr_list.push_back(2147483648);
+    message5.IP_addr_list.push_back(2684354560);
+    message5.IP_addr_list.push_back(2684356608);
+    message5.Write(clisock);
 
     /* close the socket */
     close(clisock);

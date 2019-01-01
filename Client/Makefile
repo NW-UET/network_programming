@@ -1,7 +1,9 @@
 CXX = g++
 CXXFLAGS  = -std=c++0x -Wall
 
-SRC = server.cpp client.cpp FileListUpdateRequest.cpp ListHostsRequest.cpp utils.cpp
+MSG_SRC = FileListUpdateRequest.cpp FileListUpdateResponse.cpp ListFilesResponse.cpp ListHostsRequest.cpp ListHostsResponse.cpp
+MSG_OBJ = $(MSG_SRC:.cpp=.o)
+SRC = server.cpp client.cpp utils.cpp
 OBJ = $(SRC:.cpp=.o)
 
 # the build target executable:
@@ -9,17 +11,14 @@ TARGET = server client
 
 all: server client
 
-server: FileListUpdateRequest.o ListHostsRequest.o server.o utils.o
-	$(CXX) $(CXXFLAGS) FileListUpdateRequest.o ListHostsRequest.o server.o utils.o -o server
+server: msg server.o utils.o
+	$(CXX) $(CXXFLAGS) $(MSG_OBJ) server.o utils.o -o server
 
-client: FileListUpdateRequest.o ListHostsRequest.o client.o utils.o
-	$(CXX) $(CXXFLAGS) FileListUpdateRequest.o ListHostsRequest.o client.o utils.o -o client
+client: msg client.o utils.o
+	$(CXX) $(CXXFLAGS) $(MSG_OBJ) client.o utils.o -o client
 
-FileListUpdateRequest.o: FileListUpdateRequest.cpp
-	$(CXX) $(CXXFLAGS) -c FileListUpdateRequest.cpp -o FileListUpdateRequest.o
-
-ListHostsRequest.o: ListHostsRequest.cpp
-	$(CXX) $(CXXFLAGS) -c ListHostsRequest.cpp -o ListHostsRequest.o
+msg: $(MSG_OBJ)
+	$(foreach var, $(MSG_SRC), $(CXX) $(CXXFLAGS) -c $(var) -o $(var:.cpp=.o);)
 
 server.o: server.cpp
 	$(CXX) $(CXXFLAGS) -c server.cpp -o server.o
@@ -31,4 +30,4 @@ utils.o: utils.cpp
 	$(CXX) $(CXXFLAGS) -c utils.cpp -o utils.o
 
 clean:
-	$(RM) $(TARGET) $(OBJ)
+	$(RM) $(TARGET) $(OBJ) $(MSG_OBJ)

@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <string>
-#include <strings.h>
 #include <cstring>
 #include <vector>
 #include <cstdio>
@@ -70,12 +69,16 @@ struct FileListUpdateResponse
     uint8_t type = FILE_LIST_UPDATE_RESPONSE;
     uint8_t n_files;
     vector<Filestatus> filestatus_list;
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* LIST_FILES_REQUEST == 2 */
 struct ListFilesRequest
 {
     uint8_t type = LIST_FILES_REQUEST;
+    int Write(int sockfd);
+    int Read(int sockfd);
     /*no payload no data*/
 };
 
@@ -85,6 +88,8 @@ struct ListFilesResponse
     uint8_t type = LIST_FILES_RESPONSE;
     uint8_t n_files;
     vector<Filename> filename_list;
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* LIST_HOSTS_REQUEST == 4 */
@@ -102,6 +107,8 @@ struct ListHostsResponse
     uint8_t type = LIST_HOSTS_RESPONSE;
     uint8_t n_hosts;
     vector<uint32_t> IP_addr_list;
+    int Write(int sockfd);
+    int Read(int sockfd);
 };
 
 /* client - client*/
