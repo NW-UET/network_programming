@@ -60,6 +60,16 @@ int main(int argc, char const *argv[])
     ListFilesRequest message6;
     message6.Write(sockfd);
 
+    DownloadFileRequest message7;
+    message7.filename.filename_length = 3;
+    message7.filename.filename = "hjl";
+    message7.offset = 354;
+    message7.Write(sockfd);
+
+    DownloadFileResponse message8;
+    message8.Read(sockfd);
+    message8.print();
+
     /* close the socket */
     close(sockfd);
     return 0;

@@ -95,6 +95,13 @@ int main(int argc, char const *argv[])
     message6.Read(clisock);
     message6.print();
 
+    DownloadFileRequest message7;
+    message7.Read(clisock);
+    message7.print();
+
+    DownloadFileResponse message8;
+    message8.Write(clisock);
+
     /* close the socket */
     close(clisock);
     close(sockfd);

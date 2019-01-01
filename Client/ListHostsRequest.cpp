@@ -17,7 +17,7 @@ int ListHostsRequest::Write(int sockfd)
     // filename.filename_length
     uint16_t filename_length = htons(this->filename.filename_length);
     memcpy(ptr, &filename_length, sizeof(filename_length));
-    ptr = ptr + sizeof(this->filename.filename_length);
+    ptr = ptr + sizeof(filename_length);
     // filename.filename
     memcpy(ptr, this->filename.filename.data(), this->filename.filename.size());
     ptr = ptr + this->filename.filename.size();
@@ -50,6 +50,8 @@ void ListHostsRequest::print()
 {
     printf("type = %d\n", this->type);
     printf("filename_length = %d\n", this->filename.filename_length);
-    cout << this->filename.filename << endl;
+    printf("filename = ");
+    string filename = this->filename.filename;
+    cout << filename << endl;
     printf("----\n");
 }

@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS  = -std=c++0x -Wall
 
-MSG_SRC = FileListUpdateRequest.cpp FileListUpdateResponse.cpp ListFilesRequest.cpp ListFilesResponse.cpp ListHostsRequest.cpp ListHostsResponse.cpp
+MSG_SRC = FileListUpdateRequest.cpp FileListUpdateResponse.cpp ListFilesRequest.cpp ListFilesResponse.cpp ListHostsRequest.cpp ListHostsResponse.cpp DownloadFileRequest.cpp DownloadFileResponse.cpp
 MSG_OBJ = $(MSG_SRC:.cpp=.o)
 SRC = server.cpp client.cpp utils.cpp
 OBJ = $(SRC:.cpp=.o)
