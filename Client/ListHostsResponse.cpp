@@ -50,21 +50,23 @@ int ListHostsResponse::ReadPayload(int sockfd)
 
 int ListHostsResponse::Read(int sockfd)
 {
-    if (this->type != ::ReadHeader(sockfd))
-        return 0;
-    this->ReadPayload(sockfd);
+    uint8_t type = ::ReadHeader(sockfd);
+	if (this->type == type)
+		this->ReadPayload(sockfd);
 
-    return 0;
+	return type;
 }
 
 void ListHostsResponse::print()
 {
-    printf("type = %d\n", this->type);
+    cout << "type = " << typeString(this->type) << endl;
     printf("n_hosts = %d\n", this->n_hosts);
     vector<uint32_t> IP_addr_list = this->IP_addr_list;
     for (vector<uint32_t>::iterator it = IP_addr_list.begin(); it != IP_addr_list.end(); ++it)
     {
-        printf("ip_addr = %u\n", *it);
+        struct in_addr in_addr;
+        in_addr.s_addr = (in_addr_t)(*it);
+        printf("ip_addr = %s\n", inet_ntoa(in_addr));
     }
     printf("----\n");
 }

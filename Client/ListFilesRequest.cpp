@@ -25,15 +25,15 @@ int ListFilesRequest::ReadPayload(int sockfd)
 
 int ListFilesRequest::Read(int sockfd)
 {
-    if (this->type != ::ReadHeader(sockfd))
-        return 0;
-    this->ReadPayload(sockfd);
+    uint8_t type = ::ReadHeader(sockfd);
+	if (this->type == type)
+		this->ReadPayload(sockfd);
 
-    return 0;
+	return type;
 }
 
 void ListFilesRequest::print()
 {
-    printf("type = %d\n", this->type);
+    cout << "type = " << typeString(this->type) << endl;
     printf("----\n");
 }

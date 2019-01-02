@@ -74,16 +74,16 @@ int FileListUpdateResponse::ReadPayload(int sockfd)
 
 int FileListUpdateResponse::Read(int sockfd)
 {
-    if (this->type != ::ReadHeader(sockfd))
-        return 0;
-    this->ReadPayload(sockfd);
+    uint8_t type = ::ReadHeader(sockfd);
+	if (this->type == type)
+		this->ReadPayload(sockfd);
 
-    return 0;
+	return type;
 }
 
 void FileListUpdateResponse::print()
 {
-    printf("type = %d\n", this->type);
+    cout << "type = " << typeString(this->type) << endl;
     printf("n_files = %d\n", this->n_files);
     vector<Filestatus> filestatus_list = this->filestatus_list;
     for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)

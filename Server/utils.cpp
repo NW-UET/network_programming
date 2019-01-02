@@ -56,3 +56,24 @@ uint8_t ReadHeader(int sockfd)
 
     return type;
 }
+
+string typeString(uint8_t type)
+{
+    if (type == FILE_LIST_UPDATE_REQUEST)
+        return "FILE_LIST_UPDATE_REQUEST";
+    else if (type == FILE_LIST_UPDATE_RESPONSE)
+        return "FILE_LIST_UPDATE_RESPONSE";
+    else if (type == LIST_FILES_REQUEST)
+        return "LIST_FILES_REQUEST";
+    else if (type == LIST_FILES_RESPONSE)
+        return "LIST_FILES_RESPONSE";
+    else if (type == LIST_HOSTS_REQUEST)
+        return "LIST_HOSTS_REQUEST";
+    else if (type == LIST_HOSTS_RESPONSE)
+        return "LIST_HOSTS_RESPONSE";
+    else if (type == DOWNLOAD_FILE_REQUEST)
+        return "DOWNLOAD_FILE_REQUEST";
+    else if (type == DOWNLOAD_FILE_RESPONSE)
+        return "DOWNLOAD_FILE_RESPONSE";
+    else return "";
+}

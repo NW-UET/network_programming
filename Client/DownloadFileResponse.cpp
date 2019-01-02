@@ -26,15 +26,15 @@ int DownloadFileResponse::ReadPayload(int sockfd)
 
 int DownloadFileResponse::Read(int sockfd)
 {
-	if (this->type != ::ReadHeader(sockfd))
-		return 0;
-	this->ReadPayload(sockfd);
+	uint8_t type = ::ReadHeader(sockfd);
+	if (this->type == type)
+		this->ReadPayload(sockfd);
 
-	return 0;
+	return type;
 }
 
 void DownloadFileResponse::print()
 {
-	printf("type = %d\n", this->type);
+	cout << "type = " << typeString(this->type) << endl;
 	printf("----\n");
 }

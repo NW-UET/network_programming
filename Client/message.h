@@ -27,9 +27,34 @@
 
 using namespace std;
 
+/* hàm Write viết lại, luôn cố gắng viết được n bytes */
 void Write(int sockfd, const void *buff, size_t n);
+/* hàm Read viết lại, luôn cố gắng đọc được n bytes */
 void Read(int sockfd, void *buff, size_t n);
+/* hàm ReadHeader sẽ đọc Header của thông báo và trả về kiểu của thông báo đó */
 uint8_t ReadHeader(int sockfd);
+/* viết kiểu của thông báo dưới dạng chữ, trả về xâu rỗng nếu ko đúng bất kỳ kiểu nào */
+string typeString(uint8_t type);
+
+/* Mỗi một đối tượng thông báo đều có 4 hàm sau đây */
+
+/* Msg.Write(sockfd): trích suất các thông tin có trong Msg rồi viết vào sockfd */
+// int Write(int sockfd);
+
+/* Msg.Read(sockfd): đọc header của thông báo, nếu đúng loại thông báo với Msg thì
+ * thì tiếp tục đọc payload để lấy thông tin, chỉ nên dúng nếu biết trước loại thông
+ * báo tiếp theo
+ * trả về type của Header, để dễ dàng chuyển loại đối tượng gói tin nếu cần
+ */
+// int Read(int sockfd);
+
+/* Msg.ReadPayload(sockfd): chỉ đọc payload của thông báo, chỉ nên dùng khi biết
+ * chắc chắn đúng loại thông báo, kết hợp với dùng ReadHeader(sockfd) trước để kiểm tra
+ */
+// int ReadPayload(int sockfd);
+
+/* Msg.print(): in ra màn hình thông tin của thông báo */
+// void print();
 
 struct Filename
 {
@@ -89,7 +114,6 @@ struct FileListUpdateResponse
 struct ListFilesRequest
 {
     uint8_t type = LIST_FILES_REQUEST;
-    /*no payload no data*/
     int Write(int sockfd);
     int Read(int sockfd);
     int ReadPayload(int sockfd);
@@ -149,7 +173,6 @@ struct DownloadFileRequest
 struct DownloadFileResponse
 {
     uint8_t type = DOWNLOAD_FILE_RESPONSE;
-    /*no payload have data*/
     int Write(int sockfd);
     int Read(int sockfd);
     int ReadPayload(int sockfd);

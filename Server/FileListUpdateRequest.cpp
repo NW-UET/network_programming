@@ -83,16 +83,16 @@ int FileListUpdateRequest::ReadPayload(int sockfd)
 
 int FileListUpdateRequest::Read(int sockfd)
 {
-    if (this->type != ::ReadHeader(sockfd))
-        return 0;
-    this->ReadPayload(sockfd);
+    uint8_t type = ::ReadHeader(sockfd);
+	if (this->type == type)
+		this->ReadPayload(sockfd);
 
-    return 0;
+	return type;
 }
 
 void FileListUpdateRequest::print()
 {
-    printf("type = %d\n", this->type);
+    cout << "type = " << typeString(this->type) << endl;
     printf("n_files = %d\n", this->n_files);
     vector<File> file_list = this->file_list;
     for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)

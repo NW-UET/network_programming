@@ -3,13 +3,15 @@ CXXFLAGS  = -std=c++0x -Wall
 
 MSG_SRC = FileListUpdateRequest.cpp FileListUpdateResponse.cpp ListFilesRequest.cpp ListFilesResponse.cpp ListHostsRequest.cpp ListHostsResponse.cpp DownloadFileRequest.cpp DownloadFileResponse.cpp
 MSG_OBJ = $(MSG_SRC:.cpp=.o)
-SRC = server.cpp client.cpp utils.cpp
+SRC = server.cpp utils.cpp
 OBJ = $(SRC:.cpp=.o)
 
 # the build target executable:
-TARGET = server client
+TARGET = server
 
-server: msg server.o utils.o
+all: server msg
+
+server: $(MSG_OBJ) server.o utils.o
 	$(CXX) $(CXXFLAGS) $(MSG_OBJ) server.o utils.o -o server -pthread
 
 msg: $(MSG_OBJ)
