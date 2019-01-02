@@ -17,11 +17,8 @@ static void *doit(void *arg);
 int main(int argc, char const *argv[])
 {
     //created argument for thread
-	int listenfd, connfd;
 	pthread_t tid;
-	socklen_t addrlen, len;
-	struct sockaddr cliaddr;
-	//socket
+    //socket
 	/*
 	family:
 	AF_INET IPv4
@@ -121,9 +118,26 @@ static void *doit(void *arg){
         close(newfd);
         return NULL;
     }else if(type==2){
-        // struct ListFilesResponse package3;
-        // package3.n_files=0;
-        // pack
+        struct ListFilesResponse package3;
+        package3.n_files=1;
+        Filesize temp;
+        temp.filename_length=1;
+        temp.filename="a";
+        temp.file_size=1;
+        package3.filesize_list.push_back(temp);
+        package3.Write(newfd);
+        close(newfd);
+        return NULL;
+    }else if(type ==4){
+        struct ListHostsResponse package5;
+        package5.n_hosts=2;
+        package5.IP_addr_list.push_back(inet_addr("127.0.0.1"));
+        package5.IP_addr_list.push_back(inet_addr("192.156.0.2"));
+        close(newfd);
+        return NULL;
+    }else{
+        close(newfd);
+        return NULL;
     }
     
             
