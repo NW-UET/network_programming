@@ -14,7 +14,7 @@ void Write(int sockfd, const void *buff, size_t n)
         }
         if (bytesWritenThisTime == 0)
         {
-            printf("socket was closed\n");
+            printf("Writing socket was closed\n");
             break;
         }
         if (bytesWritenThisTime > 0)
@@ -38,7 +38,7 @@ void Read(int sockfd, void *buff, size_t n)
         }
         if (bytesReadThisTime == 0)
         {
-            printf("socket was closed\n");
+            printf("Reading socket was closed\n");
             break;
         }
         if (bytesReadThisTime > 0)
