@@ -1,111 +1,148 @@
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <pthread.h>
+#include <cstdint>
 #include "message.h"
-
-#define BLOCK_SIZE 2048
-
+#define BLOCK_SIZE 2048;
+static void *doit(void *arg);
 int main(int argc, char const *argv[])
 {
-    /* create socket descriptor 'sockfd' */
-    int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("socket");
-        exit(1);
-    }
-    /* reuse port */
-    int opval = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opval, sizeof(opval)) < 0)
-    {
-        perror("setsockopt");
-        exit(1);
-    }
-    /* bind socket 'sockfd' to socket address */
-    struct sockaddr_in servaddr; /* server socket addr */
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;                     /* use the Internet addr family */
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); /* use localhost addr*/
-    servaddr.sin_port = htons(6789);                   /* bind ‘sockfd’ to port 6789 */
-    if (bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
-    {
-        perror("bind");
-        exit(1);
-    }
-    /* listen for connections */
-    if (listen(sockfd, 5) < 0)
-    {
-        perror("listen");
-        exit(1);
-    }
-    /* accept client connection */
-    struct sockaddr_in cliaddr; /* client socket addr */
-    bzero(&cliaddr, sizeof(cliaddr));
-    socklen_t cliaddr_len = sizeof(cliaddr); /* length of client socket addr */
-    int clisock = accept(sockfd, (struct sockaddr *)&cliaddr, &cliaddr_len);
-    if (clisock < 0)
-    {
-        perror("accept");
-        exit(1);
-    }
-    /* print client's IP and port on screen */
-    printf("Client's IP: %s\n", inet_ntoa(cliaddr.sin_addr));
-    printf("Client's port: %d\n", ntohs(cliaddr.sin_port));
+    //created argument for thread
+	int listenfd, connfd;
+	pthread_t tid;
+	socklen_t addrlen, len;
+	struct sockaddr cliaddr;
+	//socket
+	/*
+	family:
+	AF_INET IPv4
+	AF_INET6 IPv6
+	AF_LOCAL Unix Domain
+	
+	type:
+	SOCK_STREAM (TCP)
+	SOCK_DGRAM (UDP)
+	SOCK_RAW
+	
+	protocol:
+	0 mac dinh
+	neu SOCK_RAW moi can thiet lap
+	*/
 
-    printf("Reading..\n");
-    fflush(stdout);
+	int sockfd;
+	
+	if((sockfd=socket(AF_INET,SOCK_STREAM,0))<0){
+		perror("socket");
+		exit(0);
+	}
+	int opval=1;
+	setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&opval,sizeof(opval));
 
-    FileListUpdateRequest message;
-    message.Read(clisock);
-    message.print();
+	// struct timeval	tv;
+	// tv.tv_sec = 5;
+	// tv.tv_usec = 0;
+	// setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+	
+	struct sockaddr_in sockaddr;
+	bzero(&sockaddr, sizeof(sockaddr));
+	sockaddr.sin_family=AF_INET;
+	sockaddr.sin_port=htons(6789);
+	sockaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+	printf("%d\n%d\n",6789,inet_addr("127.0.0.1"));
+	//bind
+	/*
+	
+	*/
+	if(bind(sockfd,(struct sockaddr*) &sockaddr, sizeof(sockaddr))<0){
+		perror("bind");
+		exit(0);
+	}
+	while(1){
+		//listen
+		printf("Listening connection!!!\n");
+		if(listen(sockfd,10)<0){
+			perror("listen");
+			continue;
+		}
+		
+		//accept
+		int *newfd=(int*)malloc(sizeof(int));
+		struct sockaddr_in cliaddr;
+		int cliaddr_len=sizeof(cliaddr);
+		(*newfd) = accept(sockfd,(struct sockaddr*) &cliaddr, (socklen_t*) &cliaddr_len);
+		if((*newfd)<0){
+			if(errno==EINTR) continue;
+			perror("accept");
+			continue;
+		}
 
-    ListHostsRequest message2;
-    message2.Read(clisock);
-    message2.print();
+		//CREATE THREAD
+		pthread_create(&tid,NULL,&doit,(void*)newfd);
 
-    FileListUpdateResponse message3;
-    message3.n_files = 2;
-    Filestatus filestatus;
-    filestatus.filename_length = 7;
-    filestatus.filename = "abcdefg";
-    filestatus.status = 0;
-    message3.filestatus_list.push_back(filestatus);
-    filestatus.filename_length = 2;
-    filestatus.filename = "ae";
-    filestatus.status = 1;
-    message3.filestatus_list.push_back(filestatus);
-    message3.Write(clisock);
-
-    ListFilesResponse message4;
-    message4.n_files = 2;
-    Filesize filesize;
-    filesize.filename_length = 3;
-    filesize.filename = "uio";
-    filesize.file_size = 5413;
-    message4.filesize_list.push_back(filesize);
-    filesize.filename_length = 6;
-    filesize.filename = "rtypoi";
-    filesize.file_size = 6789;
-    message4.filesize_list.push_back(filesize);
-    message4.Write(clisock);
-
-    ListHostsResponse message5;
-    message5.n_hosts = 3;
-    message5.IP_addr_list.push_back(2147483648);
-    message5.IP_addr_list.push_back(2684354560);
-    message5.IP_addr_list.push_back(2684356608);
-    message5.Write(clisock);
-
-    ListFilesRequest message6;
-    message6.Read(clisock);
-    message6.print();
-
-    DownloadFileRequest message7;
-    message7.Read(clisock);
-    message7.print();
-
-    DownloadFileResponse message8;
-    message8.Write(clisock);
-
-    /* close the socket */
-    close(clisock);
-    close(sockfd);
+		//printf("Client IP: %s\nClient Port: %d\n",inet_ntoa(cliaddr.sin_addr),cliaddr.sin_port);
+		
+		
+	}	
     return 0;
+}
+static void *doit(void *arg){
+	int newfd= *((int*)arg);
+	pthread_detach(pthread_self());
+	free(arg);
+    //read data received
+	uint8_t type;
+    type=ReadHeader(newfd);
+    printf("%d",type);
+    if(type==0){
+        // printf("")
+        struct FileListUpdateRequest package0;
+        package0.ReadPayload(newfd);
+
+        struct FileListUpdateResponse package1;
+        package1.n_files=package0.n_files;
+        for(int i=0;i<package0.n_files;i++){
+            Filestatus temp;
+            temp.filename=package0.file_list.at(i).filename;
+            temp.filename_length=package0.file_list.at(i).filename_length;
+            temp.status=0;
+            package1.filestatus_list.push_back(temp);
+        }
+        package1.print();
+        package1.Write(newfd);
+        close(newfd);
+        return NULL;
+    }else if(type==2){
+        // struct ListFilesResponse package3;
+        // package3.n_files=0;
+        // pack
+    }
+    
+            
+        // case 2:
+        //     ListFilesResponse package3;
+        //     package3.n_files=2;
+        //     Filesize r3;
+        //     r3.filename_length=4;
+        //     r3.filename="ab.o";
+        //     r3.file_size=1024;
+        //     package3.filesize_list.push_back(r3);
+        //     r3.filename_length=6;
+        //     r3.filename="abcd.o";
+        //     r3.file_size=2048;
+        //     package3.filesize_list.push_back(r3);
+        // case 4:
+        //     ListHostsResponse package4;
+        //     package4.n_hosts=2;
+        //     package4.IP_addr_list.push_back(inet_addr("127.0.0.2"));
+        //     package4.IP_addr_list.push_back(inet_addr("127.0.0.3"));
+        
 }

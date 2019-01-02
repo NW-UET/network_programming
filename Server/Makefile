@@ -10,7 +10,7 @@ OBJ = $(SRC:.cpp=.o)
 TARGET = server client
 
 server: msg server.o utils.o
-	$(CXX) $(CXXFLAGS) $(MSG_OBJ) server.o utils.o -o server
+	$(CXX) $(CXXFLAGS) $(MSG_OBJ) server.o utils.o -o server -pthread
 
 msg: $(MSG_OBJ)
 	$(foreach var, $(MSG_SRC), $(CXX) $(CXXFLAGS) -c $(var) -o $(var:.cpp=.o);)
