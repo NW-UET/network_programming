@@ -133,9 +133,12 @@ static void *doit(void *arg){
 		package6.ReadPayload(newfd);
 		package6.print();
         struct ListHostsResponse package5;
-        package5.n_hosts=2;
+		package5.file_size = 15;
+        package5.n_hosts=3;
         package5.IP_addr_list.push_back(inet_addr("127.0.0.1"));
+		package5.IP_addr_list.push_back(inet_addr("127.0.0.1"));
         package5.IP_addr_list.push_back(inet_addr("192.156.0.2"));
+		package5.print();
 		package5.Write(newfd);
         close(newfd);
         return NULL;

@@ -147,6 +147,7 @@ struct ListHostsRequest
 struct ListHostsResponse
 {
     uint8_t type = LIST_HOSTS_RESPONSE;
+    uint64_t file_size;
     uint8_t n_hosts;
     vector<uint32_t> IP_addr_list;
     int Write(int sockfd);
@@ -163,6 +164,7 @@ struct DownloadFileRequest
     uint8_t type = DOWNLOAD_FILE_REQUEST;
     Filename filename;
     uint32_t offset;
+    uint64_t size;
     int Write(int sockfd);
     int Read(int sockfd);
     int ReadPayload(int sockfd);

@@ -5,7 +5,8 @@ using namespace std;
 int DownloadFileRequest::Write(int sockfd)
 {
 	// size
-	size_t size = sizeof(this->type) + sizeof(this->filename.filename_length) +
+	size_t size = sizeof(this->type) + sizeof(this->size) +
+				  sizeof(this->filename.filename_length) +
 				  this->filename.filename.size() + sizeof(this->offset);
 	// allocate memory
 	char *begin = (char *)malloc(size);
@@ -25,6 +26,10 @@ int DownloadFileRequest::Write(int sockfd)
 	uint32_t offset = htonl(this->offset);
 	memcpy(ptr, &offset, sizeof(offset));
 	ptr = ptr + sizeof(offset);
+	// fsize
+	uint64_t fsize = htobe64(this->size);
+	memcpy(ptr, &fsize, sizeof(fsize));
+	ptr = ptr + sizeof(fsize);
 	// send packet
 	::Write(sockfd, begin, size);
 
@@ -48,6 +53,11 @@ int DownloadFileRequest::ReadPayload(int sockfd)
 	::Read(sockfd, &offset, sizeof(offset));
 	offset = ntohl(offset);
 	this->offset = offset;
+	// fsize
+	uint64_t fsize;
+	::Read(sockfd, &fsize, sizeof(fsize));
+	fsize = be64toh(fsize);
+	this->size = fsize;
 
 	return 0;
 }
@@ -69,5 +79,6 @@ void DownloadFileRequest::print()
 	string filename = this->filename.filename;
 	cout << filename << endl;
 	printf("offset = %d\n", this->offset);
+	printf("size = %d\n", this->size);
 	printf("----\n");
 }

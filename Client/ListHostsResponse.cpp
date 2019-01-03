@@ -6,7 +6,8 @@ int ListHostsResponse::Write(int sockfd)
 {
     // size
     vector<uint32_t> IP_addr_list = this->IP_addr_list;
-    size_t size = sizeof(this->type) + sizeof(this->n_hosts) + sizeof(uint32_t) * IP_addr_list.size();
+    size_t size = sizeof(this->type) + sizeof(this->file_size) + sizeof(this->n_hosts) +
+                  sizeof(uint32_t) * IP_addr_list.size();
     // allocate memory
     char *begin = (char *)malloc(size);
     bzero((void *)begin, size);
@@ -14,6 +15,10 @@ int ListHostsResponse::Write(int sockfd)
     // type
     memcpy(ptr, &this->type, sizeof(this->type));
     ptr = ptr + sizeof(this->type);
+    // file_size
+    uint64_t file_size = htobe64(this->file_size);
+    memcpy(ptr, &file_size, sizeof(file_size));
+    ptr = ptr + sizeof(file_size);
     // n_hosts
     memcpy(ptr, &this->n_hosts, sizeof(this->n_hosts));
     ptr = ptr + sizeof(this->n_hosts);
@@ -34,6 +39,11 @@ int ListHostsResponse::Write(int sockfd)
 
 int ListHostsResponse::ReadPayload(int sockfd)
 {
+    // file_size
+    uint64_t file_size;
+    ::Read(sockfd, &file_size, sizeof(file_size));
+    file_size = be64toh(file_size);
+    this->file_size = file_size;
     // n_hosts
     ::Read(sockfd, &this->n_hosts, sizeof(this->n_hosts));
     // IP_addr_list
@@ -51,15 +61,16 @@ int ListHostsResponse::ReadPayload(int sockfd)
 int ListHostsResponse::Read(int sockfd)
 {
     uint8_t type = ::ReadHeader(sockfd);
-	if (this->type == type)
-		this->ReadPayload(sockfd);
+    if (this->type == type)
+        this->ReadPayload(sockfd);
 
-	return type;
+    return type;
 }
 
 void ListHostsResponse::print()
 {
     cout << "type = " << typeString(this->type) << endl;
+    cout << "file_size = " << this->file_size << endl;
     printf("n_hosts = %d\n", this->n_hosts);
     vector<uint32_t> IP_addr_list = this->IP_addr_list;
     for (vector<uint32_t>::iterator it = IP_addr_list.begin(); it != IP_addr_list.end(); ++it)

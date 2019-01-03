@@ -4,8 +4,18 @@
 
 static void *requestThread(void *arg);
 static void *responseThread(void *arg);
-void sendFile(int const clisock, string const filename, uint32_t const offset);
-void receiveFile(int const sockfd, string const filename);
+static void *downloadThread(void *arg);
+void sendFile(int const clisock, string const filename, uint32_t const offset, uint64_t const size);
+void receiveFile(int const sockfd, string const filename, uint32_t const offset, uint64_t const size);
+
+struct FileToDownload
+{
+    uint32_t sockfd;
+    uint32_t offset;
+    uint64_t size;
+    uint8_t shardId;
+    string filename;
+};
 
 int main(int argc, char const *argv[])
 {
@@ -57,6 +67,9 @@ int main(int argc, char const *argv[])
             perror("accept");
             exit(1);
         }
+        /* print client's IP and port on screen */
+        printf("Client's IP: %s\n", inet_ntoa(cliaddr.sin_addr));
+        printf("Client's port: %d\n", ntohs(cliaddr.sin_port));
         /* create a passive thread */
         pthread_t tid;
         pthread_create(&tid, NULL, &responseThread, (void *)clisock_ptr);
@@ -66,22 +79,22 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-int *createRequestSocket(const struct sockaddr_in *servaddr)
+int createRequestSocket(const struct sockaddr_in *servaddr)
 {
     /* create socket descriptor 'sockfd' */
-    int *sockfd_ptr = (int *)malloc(sizeof(int));
-    if ((*sockfd_ptr = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    int sockfd;
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("socket");
         exit(1);
     }
     /* connect socket 'sockfd' to server */
-    if (connect(*sockfd_ptr, (struct sockaddr *)servaddr, sizeof(*servaddr)) < 0)
+    if (connect(sockfd, (struct sockaddr *)servaddr, sizeof(*servaddr)) < 0)
     {
         perror("connect");
         exit(1);
     }
-    return sockfd_ptr;
+    return sockfd;
 }
 
 static void *requestThread(void *arg)
@@ -104,7 +117,7 @@ static void *requestThread(void *arg)
         {
         case '1':
         {
-            int sockfd = *createRequestSocket(&servaddr);
+            int sockfd = createRequestSocket(&servaddr);
             FileListUpdateRequest file_list_update_request;
             file_list_update_request.n_files = 3;
             File file;
@@ -131,7 +144,7 @@ static void *requestThread(void *arg)
         }
         case '2':
         {
-            int sockfd = *createRequestSocket(&servaddr);
+            int sockfd = createRequestSocket(&servaddr);
             ListFilesRequest list_files_request;
             list_files_request.Write(sockfd);
             ListFilesResponse list_files_response;
@@ -151,10 +164,15 @@ static void *requestThread(void *arg)
         }
         case '3':
         {
-            cout << "Input your file name: ";
+            uint8_t n_hosts = 0;
             string filename;
+            uint32_t offset = 0;
+            uint64_t size = 0;
+            uint64_t file_size = 0;
+            uint8_t n_shards = 0;
+            cout << "Input your file name: ";
             cin >> filename;
-            int sockfd = *createRequestSocket(&servaddr);
+            int sockfd = createRequestSocket(&servaddr);
             // send list hosts request
             ListHostsRequest list_hosts_request;
             list_hosts_request.filename.filename = filename;
@@ -163,37 +181,48 @@ static void *requestThread(void *arg)
             // receive list hosts response
             ListHostsResponse list_hosts_response;
             list_hosts_response.Read(sockfd);
-            // list_hosts_response.print();
+            file_size = list_hosts_response.file_size;
+            n_hosts = list_hosts_response.n_hosts;
+            cout << "File size: " << (long)file_size << endl;
             cout << "Number of hosts: ";
-            cout << (int)list_hosts_response.n_hosts << endl;
-            for (uint8_t i = 0; i < list_hosts_response.n_hosts; i++)
+            cout << (int)n_hosts << endl;
+            for (uint8_t i = 0; i < n_hosts; i++)
             {
                 struct in_addr in_addr;
                 in_addr.s_addr = (in_addr_t)(list_hosts_response.IP_addr_list.at(i));
                 cout << inet_ntoa(in_addr) << endl;
             }
-            // send download file request to first host
-            // create socket
+            /* close the socket */
+            close(sockfd);
+            // create download client address
             struct sockaddr_in dlhost;
             bzero(&dlhost, sizeof(dlhost));
             dlhost.sin_family = AF_INET;
             dlhost.sin_addr.s_addr = (in_addr_t)(list_hosts_response.IP_addr_list.front());
-            dlhost.sin_port = htons(4444);
-            sockfd = *createRequestSocket(&dlhost);
-            // send request
-            DownloadFileRequest download_file_request;
-            download_file_request.filename.filename = filename;
-            download_file_request.filename.filename_length = filename.size();
-            download_file_request.offset = 0;
-            download_file_request.Write(sockfd);
-            // set timeout
-            // receive response
-            DownloadFileResponse download_file_response;
-            download_file_response.Read(sockfd);
+            dlhost.sin_port = htons(9876);
             // receive file
-            receiveFile(sockfd, filename);
-            /* close the socket */
-            close(sockfd);
+            offset = 0;
+            n_shards = 2;
+            for (uint8_t i = 0; i < n_shards; i++)
+            {
+                // send request
+                if (i == n_shards - 1)
+                    size = (file_size / n_shards) + (file_size % n_shards) - n_shards + 1;
+                else
+                    size = file_size / n_shards + 1;
+                // create arg
+                FileToDownload *ftd = (FileToDownload *)malloc(sizeof(FileToDownload));
+                ftd->sockfd = createRequestSocket(&dlhost);
+                ftd->offset = offset;
+                ftd->filename = filename;
+                ftd->shardId = i;
+                ftd->size = size;
+                // create a download thread
+                pthread_t tid;
+                pthread_create(&tid, NULL, &downloadThread, (void *)ftd);
+                pthread_join(tid, NULL);
+                offset += size;
+            }
             break;
         }
         }
@@ -211,29 +240,45 @@ static void *responseThread(void *arg)
     download_file_request.Read(clisock);
     string filename = download_file_request.filename.filename;
     uint32_t offset = download_file_request.offset;
+    uint64_t fsize = download_file_request.size;
     DownloadFileResponse download_file_response;
     download_file_response.Write(clisock);
-    sendFile(clisock, filename, offset);
+    sendFile(clisock, filename, offset, fsize);
     close(clisock);
     return NULL;
 }
 
-void sendFile(int const clisock, string const filename, uint32_t const offset)
+static void *downloadThread(void *arg)
 {
-    // tạm thời download hết file, chưa sử dụng offset
+    FileToDownload ftd = *((FileToDownload *)arg);
+    free(arg);
+    pthread_detach(pthread_self());
+    DownloadFileRequest download_file_request;
+    download_file_request.filename.filename = ftd.filename;
+    download_file_request.filename.filename_length = ftd.filename.size();
+    download_file_request.offset = ftd.offset;
+    download_file_request.size = ftd.size;
+    download_file_request.Write(ftd.sockfd);
+    // set timeout
+    // receive response
+    DownloadFileResponse download_file_response;
+    download_file_response.Read(ftd.sockfd);
+    string filename = ftd.filename + to_string((int)ftd.shardId);
+    receiveFile(ftd.sockfd, filename, ftd.offset, ftd.size);
+    close(ftd.sockfd);
+    return NULL;
+}
+
+void sendFile(int const clisock, string const filename, uint32_t const offset, uint64_t const size)
+{
     /* open file */
     char filePath[140] = "Share/";
     strcat(filePath, filename.c_str());
     FILE *file = fopen(filePath, "rb");
-    long lSize;
     /* read file */
-    fseek(file, 0, SEEK_END);
-    lSize = ftell(file);
-    rewind(file);
-    /* send size of file to client*/
-    Write(clisock, &lSize, sizeof(lSize));
+    fseek(file, offset, SEEK_SET);
     char buffer[BLOCK_SIZE + 1];
-    long sizeToRead = lSize;
+    long sizeToRead = size;
     while (sizeToRead > 0)
     {
         int blockSize;
@@ -256,15 +301,12 @@ void sendFile(int const clisock, string const filename, uint32_t const offset)
         if (nbytes > 0)
             sizeToRead -= nbytes;
     }
-    printf("Size of file = %ld byte(s)\n\n", lSize);
+    printf("Size of file = %ld byte(s)\n\n", size);
     fclose(file);
 }
 
-void receiveFile(int const sockfd, string const filename)
+void receiveFile(int const sockfd, string const filename, uint32_t const offset, uint64_t const size)
 {
-    /* receive size of file from server */
-    long lSize;
-    Read(sockfd, &lSize, sizeof(lSize));
     /* open file */
     char filePath[140] = "Download/";
     strcat(filePath, filename.c_str());
@@ -275,8 +317,7 @@ void receiveFile(int const sockfd, string const filename)
         exit(1);
     }
     /* receive file from server */
-    long sizeToRead = lSize;
-    cout << "Downloading.." << lSize << endl;
+    long sizeToRead = size;
     while (sizeToRead > 0)
     {
         int blockSize;
