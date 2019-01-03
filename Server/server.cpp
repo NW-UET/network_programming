@@ -12,7 +12,12 @@
 #include <pthread.h>
 #include <cstdint>
 #include "message.h"
+#include "process.h"
 #define BLOCK_SIZE 2048;
+struct {
+    int fd;
+    sockaddr_in cliaddr;
+}typedef argOfDoit;
 static void *doit(void *arg);
 int main(int argc, char const *argv[])
 {
@@ -83,7 +88,10 @@ int main(int argc, char const *argv[])
 		}
 
 		//CREATE THREAD
-		pthread_create(&tid,NULL,&doit,(void*)newfd);
+        argOfDoit* arg=new argOfDoit;
+        arg->fd=*newfd;
+        arg->cliaddr=cliaddr;
+		pthread_create(&tid,NULL,&doit,(void*)arg);
 
 		//printf("Client IP: %s\nClient Port: %d\n",inet_ntoa(cliaddr.sin_addr),cliaddr.sin_port);
 		
@@ -92,29 +100,22 @@ int main(int argc, char const *argv[])
     return 0;
 }
 static void *doit(void *arg){
-	int newfd= *((int*)arg);
+    argOfDoit* newArg=(argOfDoit*) arg;
+
+	int newfd= newArg->fd;
+    sockaddr_in cliaddr=newArg->cliaddr;
 	pthread_detach(pthread_self());
 	free(arg);
     //read data received
 	uint8_t type;
     type=ReadHeader(newfd);
-    printf("%d",type);
     if(type==0){
-        // printf("")
         struct FileListUpdateRequest package0;
         package0.ReadPayload(newfd);
-
+        
         struct FileListUpdateResponse package1;
-        package1.n_files=package0.n_files;
-        for(int i=0;i<package0.n_files;i++){
-            Filestatus temp;
-            temp.filename=package0.file_list.at(i).filename;
-            temp.filename_length=package0.file_list.at(i).filename_length;
-            temp.status=0;
-            package1.filestatus_list.push_back(temp);
-        }
-        package1.print();
-        package1.Write(newfd);
+        package1=processFileListUpdate(package0,cliaddr.sin_addr.s_addr);
+
         close(newfd);
         return NULL;
     }else if(type==2){
@@ -146,24 +147,4 @@ static void *doit(void *arg){
         close(newfd);
         return NULL;
     }
-    
-            
-        // case 2:
-        //     ListFilesResponse package3;
-        //     package3.n_files=2;
-        //     Filesize r3;
-        //     r3.filename_length=4;
-        //     r3.filename="ab.o";
-        //     r3.file_size=1024;
-        //     package3.filesize_list.push_back(r3);
-        //     r3.filename_length=6;
-        //     r3.filename="abcd.o";
-        //     r3.file_size=2048;
-        //     package3.filesize_list.push_back(r3);
-        // case 4:
-        //     ListHostsResponse package4;
-        //     package4.n_hosts=2;
-        //     package4.IP_addr_list.push_back(inet_addr("127.0.0.2"));
-        //     package4.IP_addr_list.push_back(inet_addr("127.0.0.3"));
-        
 }

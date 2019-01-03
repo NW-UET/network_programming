@@ -1,4 +1,12 @@
 #include "message.h"
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <openssl/md5.h>
 
 #define BLOCK_SIZE 2048
 
@@ -79,6 +87,28 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
+static vector<string> sendListFile(string dir)
+{
+    //list_file
+    vector<string> files = vector<string>();
+
+    DIR *folder;
+    struct dirent *d_file;
+    if ((folder = opendir(dir.c_str())) == NULL)
+    {
+        cout << "Error(" << errno << ") opening " << dir << endl;
+        return errno;
+    }
+
+    while ((d_file = readdir(folder)) != NULL)
+    {
+        files.push_back(string(d_file->d_name));
+    }
+    closedir(folder);
+
+    return files;
+}
+
 int createRequestSocket(const struct sockaddr_in *servaddr)
 {
     /* create socket descriptor 'sockfd' */
@@ -127,25 +157,64 @@ static void *requestThread(void *arg)
         case '1':
         {
             int sockfd = createRequestSocket(&servaddr);
+
             FileListUpdateRequest file_list_update_request;
-            file_list_update_request.n_files = 3;
-            File file;
-            file.filename = "abc";
-            file.file_size = 555;
-            file.filename_length = file.filename.size();
-            for (int i = 0; i < 16; i++)
-                file.md5[i] = 97 + i;
-            file_list_update_request.file_list.push_back(file);
-            file.filename = "test";
-            file.file_size = 1000;
-            file.filename_length = file.filename.size();
-            for (int i = 0; i < 16; i++)
-                file.md5[i] = 48 + i;
-            file_list_update_request.file_list.push_back(file);
-            file.filename = "file";
-            file.file_size = 10000;
-            file.filename_length = file.filename.size();
-            file_list_update_request.file_list.push_back(file);
+            /*take list_file*/
+            DIR *folder;
+            string dir = string("../Share");
+            //open folder Share
+            struct dirent *d_file;
+            if ((folder = opendir(dir.c_str())) == NULL)
+            {
+                cout << "Error(" << errno << ") opening " << dir << endl;
+                return errno;
+            }
+
+            // ...
+            int count = 0; // n_files
+            while ((d_file = readdir(folder)) != NULL)
+            {
+                File file;
+                //filename
+                file.filename = string(d_file->d_name);
+                //filename_length
+                file.filename_length = file.filename.size();
+                //file_size
+                FILE *inFile = fopen(file.filename.c_str, "rb");
+
+                if (inFile == NULL)
+                {
+                    printf("%s can't be opened.\n", filename);
+                    file.file_size = 0;
+                }
+                else
+                {
+                    fseek(inFile, 0, SEEK_END);
+                    file.file_size = ftell(inFile);
+                    rewind(inFile);
+                }
+                //md5 (file)
+                unsigned char c[MD5_DIGEST_LENGTH];
+                MD5_CTX mdContext;
+                int bytes;
+                unsigned char data[1024];
+                MD5_Init(&mdContext);
+                while ((bytes = fread(data, 1, 1024, inFile)) != 0)
+                    MD5_Update(&mdContext, data, bytes);
+                MD5_Final(c, &mdContext);
+                fclose(inFile);
+                for (int = 0; i < MD5_DIGEST_LENGTH; i++)
+                {
+                    file.md5[i] = c[i];
+                }
+                // add file to list
+                file_list_update_request.file_list.push_back(file);
+                count++;
+            }
+            closedir(folder);
+
+            file_list_update_request.n_files = count;
+            /*send to server*/
             file_list_update_request.Write(sockfd);
             /* close the socket */
             close(sockfd);
