@@ -12,7 +12,7 @@ TARGET = client
 all: client msg
 
 client: $(MSG_OBJ) client.o utils.o
-	$(CXX) $(CXXFLAGS) $(MSG_OBJ) client.o utils.o -o client -pthread
+	$(CXX) $(CXXFLAGS) $(MSG_OBJ) client.o utils.o -o client -pthread -lssl -lcrypto
 
 msg: $(MSG_OBJ)
 	$(foreach var, $(MSG_SRC), $(CXX) $(CXXFLAGS) -c $(var) -o $(var:.cpp=.o);)

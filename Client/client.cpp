@@ -1,6 +1,7 @@
 #include "message.h"
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
 #include <vector>
@@ -87,26 +88,11 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-static vector<string> sendListFile(string dir)
+int is_regular_file(const char *path)
 {
-    //list_file
-    vector<string> files = vector<string>();
-
-    DIR *folder;
-    struct dirent *d_file;
-    if ((folder = opendir(dir.c_str())) == NULL)
-    {
-        cout << "Error(" << errno << ") opening " << dir << endl;
-        return errno;
-    }
-
-    while ((d_file = readdir(folder)) != NULL)
-    {
-        files.push_back(string(d_file->d_name));
-    }
-    closedir(folder);
-
-    return files;
+    struct stat path_stat;
+    stat(path, &path_stat);
+    return S_ISREG(path_stat.st_mode);
 }
 
 int createRequestSocket(const struct sockaddr_in *servaddr)
@@ -161,61 +147,65 @@ static void *requestThread(void *arg)
             FileListUpdateRequest file_list_update_request;
             /*take list_file*/
             DIR *folder;
-            string dir = string("../Share");
+            string dir = string("Share");
             //open folder Share
             struct dirent *d_file;
             if ((folder = opendir(dir.c_str())) == NULL)
             {
                 cout << "Error(" << errno << ") opening " << dir << endl;
-                return errno;
             }
-
-            // ...
-            int count = 0; // n_files
-            while ((d_file = readdir(folder)) != NULL)
+            else
             {
-                File file;
-                //filename
-                file.filename = string(d_file->d_name);
-                //filename_length
-                file.filename_length = file.filename.size();
-                //file_size
-                FILE *inFile = fopen(file.filename.c_str, "rb");
+                int count = 0; // n_files
+                while ((d_file = readdir(folder)) != NULL)
+                {
+                    File file;
+                    //filename
+                    file.filename = string(d_file->d_name);
+                    //filename_length
+                    file.filename_length = file.filename.size();
+                    //file_size
+                    if (is_regular_file((dir + "/" + file.filename).c_str()))
+                    {
+                        FILE *inFile = fopen((dir + "/" + file.filename).c_str(), "rb");
+                        cout << file.filename << endl;
+                        if (inFile == NULL)
+                        {
+                            printf("%s can't be opened.\n", file.filename.c_str());
+                            file.file_size = 0;
+                        }
+                        else
+                        {
+                            fseek(inFile, 0, SEEK_END);
+                            file.file_size = ftell(inFile);
+                            rewind(inFile);
+                        }
+                        //md5 (file)
+                        unsigned char c[MD5_DIGEST_LENGTH];
+                        MD5_CTX mdContext;
+                        int bytes;
+                        unsigned char data[1024];
+                        MD5_Init(&mdContext);
+                        while ((bytes = fread(data, 1, 1024, inFile)) != 0)
+                            MD5_Update(&mdContext, data, bytes);
+                        MD5_Final(c, &mdContext);
+                        fclose(inFile);
+                        for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
+                        {
+                            file.md5[i] = c[i];
+                        }
+                        // add file to list
+                        file_list_update_request.file_list.push_back(file);
+                        count++;
+                    }
+                }
+                closedir(folder);
 
-                if (inFile == NULL)
-                {
-                    printf("%s can't be opened.\n", filename);
-                    file.file_size = 0;
-                }
-                else
-                {
-                    fseek(inFile, 0, SEEK_END);
-                    file.file_size = ftell(inFile);
-                    rewind(inFile);
-                }
-                //md5 (file)
-                unsigned char c[MD5_DIGEST_LENGTH];
-                MD5_CTX mdContext;
-                int bytes;
-                unsigned char data[1024];
-                MD5_Init(&mdContext);
-                while ((bytes = fread(data, 1, 1024, inFile)) != 0)
-                    MD5_Update(&mdContext, data, bytes);
-                MD5_Final(c, &mdContext);
-                fclose(inFile);
-                for (int = 0; i < MD5_DIGEST_LENGTH; i++)
-                {
-                    file.md5[i] = c[i];
-                }
-                // add file to list
-                file_list_update_request.file_list.push_back(file);
-                count++;
+                file_list_update_request.n_files = count;
+                /*send to server*/
+                file_list_update_request.Write(sockfd);
+                file_list_update_request.print();
             }
-            closedir(folder);
-
-            file_list_update_request.n_files = count;
-            /*send to server*/
-            file_list_update_request.Write(sockfd);
             /* close the socket */
             close(sockfd);
             break;
