@@ -1,7 +1,11 @@
 #include "message.h"
 
+#define BLOCK_SIZE 2048
+
 static void *requestThread(void *arg);
 static void *responseThread(void *arg);
+void sendFile(int const clisock, string const filename, uint32_t const offset);
+void receiveFile(int const sockfd, string const filename);
 
 int main(int argc, char const *argv[])
 {
@@ -123,7 +127,6 @@ static void *requestThread(void *arg)
             file_list_update_request.Write(sockfd);
             /* close the socket */
             close(sockfd);
-            free(&sockfd);
             break;
         }
         case '2':
@@ -144,7 +147,6 @@ static void *requestThread(void *arg)
             }
             /* close the socket */
             close(sockfd);
-            free(&sockfd);
             break;
         }
         case '3':
@@ -176,8 +178,7 @@ static void *requestThread(void *arg)
             bzero(&dlhost, sizeof(dlhost));
             dlhost.sin_family = AF_INET;
             dlhost.sin_addr.s_addr = (in_addr_t)(list_hosts_response.IP_addr_list.front());
-            dlhost.sin_port = htons(9876);
-            free(&sockfd);
+            dlhost.sin_port = htons(4444);
             sockfd = *createRequestSocket(&dlhost);
             // send request
             DownloadFileRequest download_file_request;
@@ -190,9 +191,9 @@ static void *requestThread(void *arg)
             DownloadFileResponse download_file_response;
             download_file_response.Read(sockfd);
             // receive file
+            receiveFile(sockfd, filename);
             /* close the socket */
             close(sockfd);
-            free(&sockfd);
             break;
         }
         }
@@ -203,11 +204,100 @@ static void *requestThread(void *arg)
 
 static void *responseThread(void *arg)
 {
-    int clisock;
-    clisock = *((int *)arg);
+    int clisock = *((int *)arg);
     free(arg);
     pthread_detach(pthread_self());
-    // send file
+    DownloadFileRequest download_file_request;
+    download_file_request.Read(clisock);
+    string filename = download_file_request.filename.filename;
+    uint32_t offset = download_file_request.offset;
+    DownloadFileResponse download_file_response;
+    download_file_response.Write(clisock);
+    sendFile(clisock, filename, offset);
     close(clisock);
     return NULL;
+}
+
+void sendFile(int const clisock, string const filename, uint32_t const offset)
+{
+    // tạm thời download hết file, chưa sử dụng offset
+    /* open file */
+    char filePath[140] = "Share/";
+    strcat(filePath, filename.c_str());
+    FILE *file = fopen(filePath, "rb");
+    long lSize;
+    /* read file */
+    fseek(file, 0, SEEK_END);
+    lSize = ftell(file);
+    rewind(file);
+    /* send size of file to client*/
+    Write(clisock, &lSize, sizeof(lSize));
+    char buffer[BLOCK_SIZE + 1];
+    long sizeToRead = lSize;
+    while (sizeToRead > 0)
+    {
+        int blockSize;
+        if (sizeToRead >= BLOCK_SIZE)
+        {
+            blockSize = BLOCK_SIZE;
+        }
+        else
+        {
+            blockSize = sizeToRead;
+        }
+        fread(buffer, 1, blockSize, file);
+        /* send file to client */
+        int nbytes = write(clisock, buffer, blockSize);
+        if (nbytes < 0)
+        {
+            perror("write");
+            exit(1);
+        }
+        if (nbytes > 0)
+            sizeToRead -= nbytes;
+    }
+    printf("Size of file = %ld byte(s)\n\n", lSize);
+    fclose(file);
+}
+
+void receiveFile(int const sockfd, string const filename)
+{
+    /* receive size of file from server */
+    long lSize;
+    Read(sockfd, &lSize, sizeof(lSize));
+    /* open file */
+    char filePath[140] = "Download/";
+    strcat(filePath, filename.c_str());
+    FILE *file = fopen(filePath, "wb");
+    if (file == NULL)
+    {
+        perror("file");
+        exit(1);
+    }
+    /* receive file from server */
+    long sizeToRead = lSize;
+    cout << "Downloading.." << lSize << endl;
+    while (sizeToRead > 0)
+    {
+        int blockSize;
+        if (sizeToRead >= BLOCK_SIZE)
+        {
+            blockSize = BLOCK_SIZE;
+        }
+        else
+        {
+            blockSize = sizeToRead;
+        }
+        char fileData[BLOCK_SIZE];
+        int fileDatalen = read(sockfd, fileData, blockSize);
+        if (fileDatalen < 0)
+        {
+            perror("read");
+            exit(1);
+        }
+        fwrite(fileData, sizeof(char), fileDatalen, file);
+        if (fileDatalen > 0)
+            sizeToRead -= fileDatalen;
+    }
+    fclose(file);
 }
