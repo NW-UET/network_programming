@@ -14,7 +14,7 @@ struct FileToDownload
     uint32_t offset;
     uint64_t size;
     uint8_t shardId;
-    string filename;
+    string *filename_ptr;
 };
 
 int main(int argc, char const *argv[])
@@ -86,6 +86,15 @@ int createRequestSocket(const struct sockaddr_in *servaddr)
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("socket");
+        exit(1);
+    }
+    /* receive timeout */
+    struct timeval timeout;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+    {
+        perror("setsockopt");
         exit(1);
     }
     /* connect socket 'sockfd' to server */
@@ -214,7 +223,7 @@ static void *requestThread(void *arg)
                 FileToDownload *ftd = (FileToDownload *)malloc(sizeof(FileToDownload));
                 ftd->sockfd = createRequestSocket(&dlhost);
                 ftd->offset = offset;
-                ftd->filename = filename;
+                ftd->filename_ptr = new string(filename);
                 ftd->shardId = i;
                 ftd->size = size;
                 // create a download thread
@@ -223,6 +232,37 @@ static void *requestThread(void *arg)
                 pthread_join(tid, NULL);
                 offset += size;
             }
+            // append file
+            // open wfile
+            char wfilePath[140] = "Download/";
+            strcat(wfilePath, filename.c_str());
+            FILE *wfile = fopen(wfilePath, "wb");
+            char buffer[BLOCK_SIZE + 1];
+            if (wfile != NULL)
+            {
+                for (uint8_t i = 0; i < n_shards; i++)
+                {
+                    // open file
+                    char rfilePath[140] = "Download/";
+                    strcat(rfilePath, (filename + to_string(i)).c_str());
+                    FILE *rfile = fopen(rfilePath, "rb");
+                    // get size
+                    if (i == n_shards - 1)
+                        size = (file_size / n_shards) + (file_size % n_shards) - n_shards + 1;
+                    else
+                        size = file_size / n_shards + 1;
+                    // append to wfile
+                    while (size > 0)
+                    {
+                        size_t bytesRead = fread(buffer, 1, BLOCK_SIZE, rfile);
+                        fwrite(buffer, sizeof(char), bytesRead, wfile);
+                        size -= bytesRead;
+                    }
+                    fclose(rfile);
+                    remove(rfilePath);
+                }
+            }
+            fclose(wfile);
             break;
         }
         }
@@ -241,6 +281,11 @@ static void *responseThread(void *arg)
     string filename = download_file_request.filename.filename;
     uint32_t offset = download_file_request.offset;
     uint64_t fsize = download_file_request.size;
+    char filePath[140] = "Share/";
+    strcat(filePath, filename.c_str());
+    FILE *file = fopen(filePath, "rb");
+    if (file == NULL)
+        return NULL;
     DownloadFileResponse download_file_response;
     download_file_response.Write(clisock);
     sendFile(clisock, filename, offset, fsize);
@@ -254,8 +299,8 @@ static void *downloadThread(void *arg)
     free(arg);
     pthread_detach(pthread_self());
     DownloadFileRequest download_file_request;
-    download_file_request.filename.filename = ftd.filename;
-    download_file_request.filename.filename_length = ftd.filename.size();
+    download_file_request.filename.filename = *ftd.filename_ptr;
+    download_file_request.filename.filename_length = (*ftd.filename_ptr).size();
     download_file_request.offset = ftd.offset;
     download_file_request.size = ftd.size;
     download_file_request.Write(ftd.sockfd);
@@ -263,8 +308,9 @@ static void *downloadThread(void *arg)
     // receive response
     DownloadFileResponse download_file_response;
     download_file_response.Read(ftd.sockfd);
-    string filename = ftd.filename + to_string((int)ftd.shardId);
+    string filename = (*ftd.filename_ptr) + to_string((int)ftd.shardId);
     receiveFile(ftd.sockfd, filename, ftd.offset, ftd.size);
+    free(ftd.filename_ptr);
     close(ftd.sockfd);
     return NULL;
 }
@@ -331,6 +377,8 @@ void receiveFile(int const sockfd, string const filename, uint32_t const offset,
         }
         char fileData[BLOCK_SIZE];
         int fileDatalen = read(sockfd, fileData, blockSize);
+        if (errno == EWOULDBLOCK)
+            return;
         if (fileDatalen < 0)
         {
             perror("read");

@@ -31,6 +31,7 @@ void Read(int sockfd, void *buff, size_t n)
     while (bytesRead != bytesToRead)
     {
         ssize_t bytesReadThisTime = read(sockfd, (char *)buff + bytesRead, (bytesToRead - bytesRead));
+        if (errno == EWOULDBLOCK) return;
         if (bytesReadThisTime < 0)
         {
             perror("read");

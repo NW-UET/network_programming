@@ -79,6 +79,6 @@ void DownloadFileRequest::print()
 	string filename = this->filename.filename;
 	cout << filename << endl;
 	printf("offset = %d\n", this->offset);
-	printf("size = %d\n", this->size);
+	printf("size = %ld\n", this->size);
 	printf("----\n");
 }
