@@ -1,31 +1,9 @@
 #include "message.h"
-#include <sys/types.h>
-#include <dirent.h>
-#include <errno.h>
-#include <vector>
-#include <string>
-#include <iostream>
 
 using namespace std;
 
 int FileListUpdateRequest::Write(int sockfd)
 {
-    //list_file
-    string dir = string("\\Share");
-    vector<string> files = vector<string>();
-
-    DIR *folder;
-    struct dirent *d_file;
-    if((folder  = opendir(dir.c_str())) == NULL) {
-        cout << "Error(" << errno << ") opening " << dir << endl;
-        return errno;
-    }
-
-    while ((d_file = readdir(folder)) != NULL) {
-        files.push_back(string(d_file->d_name));
-    }
-    closedir(folder);
-
     // size
     size_t size = sizeof(this->type) + sizeof(this->n_files);
     vector<File> file_list = this->file_list;
