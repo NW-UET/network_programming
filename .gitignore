@@ -2,4 +2,5 @@
 *.o
 client
 server
-Client/Download/
+Client/Download/*
+*.db

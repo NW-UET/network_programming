@@ -1,12 +1,8 @@
 #include "message.h"
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
-#include <vector>
-#include <string>
-#include <iostream>
 #include <openssl/md5.h>
 
 #define BLOCK_SIZE 2048
@@ -322,6 +318,7 @@ static void *requestThread(void *arg)
                 }
             }
             fclose(wfile);
+            cout << "Download complete. Please update your file list" << endl;
             break;
         }
         }
