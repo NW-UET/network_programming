@@ -1,7 +1,11 @@
 #include "message.h"
 
+#define BLOCK_SIZE 2048
+
 static void *requestThread(void *arg);
 static void *responseThread(void *arg);
+void sendFile(int const clisock, string const filename, uint32_t const offset);
+void receiveFile(int const sockfd, string const filename);
 
 int main(int argc, char const *argv[])
 {
@@ -62,80 +66,238 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-static void *requestThread(void *arg)
+int *createRequestSocket(const struct sockaddr_in *servaddr)
 {
     /* create socket descriptor 'sockfd' */
-    int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    int *sockfd_ptr = (int *)malloc(sizeof(int));
+    if ((*sockfd_ptr = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("socket");
         exit(1);
     }
     /* connect socket 'sockfd' to server */
+    if (connect(*sockfd_ptr, (struct sockaddr *)servaddr, sizeof(*servaddr)) < 0)
+    {
+        perror("connect");
+        exit(1);
+    }
+    return sockfd_ptr;
+}
+
+static void *requestThread(void *arg)
+{
     char ipaddr[16] = "127.0.0.1";
     struct sockaddr_in servaddr; /* server socket addr */
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;                /* use the Internet addr family */
     servaddr.sin_addr.s_addr = inet_addr(ipaddr); /* connect to server's IP */
     servaddr.sin_port = htons(6789);              /* use server's port 6789 */
-    if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
-    {
-        perror("connect");
-        exit(1);
-    }
-
     while (1)
     {
-        // FileListUpdateRequest file_list_update_request;
-        // file_list_update_request.n_files = 3;
-        // File file;
-        // file.filename = "abc";
-        // file.file_size = 555;
-        // file.filename_length = file.filename.size();
-        // for (int i = 0; i < 16; i++)
-        //     file.md5[i] = 97 + i;
-        // file_list_update_request.file_list.push_back(file);
-        // file.filename = "test";
-        // file.file_size = 1000;
-        // file.filename_length = file.filename.size();
-        // for (int i = 0; i < 16; i++)
-        //     file.md5[i] = 48 + i;
-        // file_list_update_request.file_list.push_back(file);
-        // file.filename = "file";
-        // file.file_size = 10000;
-        // file.filename_length = file.filename.size();
-        // file_list_update_request.file_list.push_back(file);
-        // file_list_update_request.Write(sockfd);
-
-        // ListFilesRequest list_files_request;
-        // list_files_request.Write(sockfd);
-        // ListFilesResponse list_files_response;
-        // list_files_response.Read(sockfd);
-        // list_files_response.print();
-
-        ListHostsRequest list_hosts_request;
-        list_hosts_request.filename.filename = "file";
-        list_hosts_request.filename.filename_length = 4;
-        list_hosts_request.Write(sockfd);
-        ListHostsResponse list_hosts_response;
-        list_hosts_response.Read(sockfd);
-        list_hosts_response.print();
-
-        printf("Enter \"q\" to quit\n");
-        if (getchar() == 'q') break;
+        cout << "Input your action:" << endl;
+        cout << "1 = Update file list\t2 = List files\t3 = Download file" << endl;
+        cout << "Your action: ";
+        char input;
+        cin >> input;
+        cout << "----" << endl;
+        switch (input)
+        {
+        case '1':
+        {
+            int sockfd = *createRequestSocket(&servaddr);
+            FileListUpdateRequest file_list_update_request;
+            file_list_update_request.n_files = 3;
+            File file;
+            file.filename = "abc";
+            file.file_size = 555;
+            file.filename_length = file.filename.size();
+            for (int i = 0; i < 16; i++)
+                file.md5[i] = 97 + i;
+            file_list_update_request.file_list.push_back(file);
+            file.filename = "test";
+            file.file_size = 1000;
+            file.filename_length = file.filename.size();
+            for (int i = 0; i < 16; i++)
+                file.md5[i] = 48 + i;
+            file_list_update_request.file_list.push_back(file);
+            file.filename = "file";
+            file.file_size = 10000;
+            file.filename_length = file.filename.size();
+            file_list_update_request.file_list.push_back(file);
+            file_list_update_request.Write(sockfd);
+            /* close the socket */
+            close(sockfd);
+            break;
+        }
+        case '2':
+        {
+            int sockfd = *createRequestSocket(&servaddr);
+            ListFilesRequest list_files_request;
+            list_files_request.Write(sockfd);
+            ListFilesResponse list_files_response;
+            list_files_response.Read(sockfd);
+            // list_files_response.print();
+            cout << "Number of files: ";
+            cout << (int)list_files_response.n_files << endl;
+            for (uint8_t i = 0; i < list_files_response.n_files; i++)
+            {
+                Filesize filesize = list_files_response.filesize_list.at(i);
+                cout << filesize.filename << "......."
+                     << filesize.file_size << "byte(s)" << endl;
+            }
+            /* close the socket */
+            close(sockfd);
+            break;
+        }
+        case '3':
+        {
+            cout << "Input your file name: ";
+            string filename;
+            cin >> filename;
+            int sockfd = *createRequestSocket(&servaddr);
+            // send list hosts request
+            ListHostsRequest list_hosts_request;
+            list_hosts_request.filename.filename = filename;
+            list_hosts_request.filename.filename_length = filename.size();
+            list_hosts_request.Write(sockfd);
+            // receive list hosts response
+            ListHostsResponse list_hosts_response;
+            list_hosts_response.Read(sockfd);
+            // list_hosts_response.print();
+            cout << "Number of hosts: ";
+            cout << (int)list_hosts_response.n_hosts << endl;
+            for (uint8_t i = 0; i < list_hosts_response.n_hosts; i++)
+            {
+                struct in_addr in_addr;
+                in_addr.s_addr = (in_addr_t)(list_hosts_response.IP_addr_list.at(i));
+                cout << inet_ntoa(in_addr) << endl;
+            }
+            // send download file request to first host
+            // create socket
+            struct sockaddr_in dlhost;
+            bzero(&dlhost, sizeof(dlhost));
+            dlhost.sin_family = AF_INET;
+            dlhost.sin_addr.s_addr = (in_addr_t)(list_hosts_response.IP_addr_list.front());
+            dlhost.sin_port = htons(4444);
+            sockfd = *createRequestSocket(&dlhost);
+            // send request
+            DownloadFileRequest download_file_request;
+            download_file_request.filename.filename = filename;
+            download_file_request.filename.filename_length = filename.size();
+            download_file_request.offset = 0;
+            download_file_request.Write(sockfd);
+            // set timeout
+            // receive response
+            DownloadFileResponse download_file_response;
+            download_file_response.Read(sockfd);
+            // receive file
+            receiveFile(sockfd, filename);
+            /* close the socket */
+            close(sockfd);
+            break;
+        }
+        }
+        cout << endl;
     }
-    /* close the socket */
-    close(sockfd);
     return NULL;
 }
 
 static void *responseThread(void *arg)
 {
-    int clisock;
-    clisock = *((int *)arg);
+    int clisock = *((int *)arg);
     free(arg);
     pthread_detach(pthread_self());
-    // send file
+    DownloadFileRequest download_file_request;
+    download_file_request.Read(clisock);
+    string filename = download_file_request.filename.filename;
+    uint32_t offset = download_file_request.offset;
+    DownloadFileResponse download_file_response;
+    download_file_response.Write(clisock);
+    sendFile(clisock, filename, offset);
     close(clisock);
     return NULL;
+}
+
+void sendFile(int const clisock, string const filename, uint32_t const offset)
+{
+    // tạm thời download hết file, chưa sử dụng offset
+    /* open file */
+    char filePath[140] = "Share/";
+    strcat(filePath, filename.c_str());
+    FILE *file = fopen(filePath, "rb");
+    long lSize;
+    /* read file */
+    fseek(file, 0, SEEK_END);
+    lSize = ftell(file);
+    rewind(file);
+    /* send size of file to client*/
+    Write(clisock, &lSize, sizeof(lSize));
+    char buffer[BLOCK_SIZE + 1];
+    long sizeToRead = lSize;
+    while (sizeToRead > 0)
+    {
+        int blockSize;
+        if (sizeToRead >= BLOCK_SIZE)
+        {
+            blockSize = BLOCK_SIZE;
+        }
+        else
+        {
+            blockSize = sizeToRead;
+        }
+        fread(buffer, 1, blockSize, file);
+        /* send file to client */
+        int nbytes = write(clisock, buffer, blockSize);
+        if (nbytes < 0)
+        {
+            perror("write");
+            exit(1);
+        }
+        if (nbytes > 0)
+            sizeToRead -= nbytes;
+    }
+    printf("Size of file = %ld byte(s)\n\n", lSize);
+    fclose(file);
+}
+
+void receiveFile(int const sockfd, string const filename)
+{
+    /* receive size of file from server */
+    long lSize;
+    Read(sockfd, &lSize, sizeof(lSize));
+    /* open file */
+    char filePath[140] = "Download/";
+    strcat(filePath, filename.c_str());
+    FILE *file = fopen(filePath, "wb");
+    if (file == NULL)
+    {
+        perror("file");
+        exit(1);
+    }
+    /* receive file from server */
+    long sizeToRead = lSize;
+    cout << "Downloading.." << lSize << endl;
+    while (sizeToRead > 0)
+    {
+        int blockSize;
+        if (sizeToRead >= BLOCK_SIZE)
+        {
+            blockSize = BLOCK_SIZE;
+        }
+        else
+        {
+            blockSize = sizeToRead;
+        }
+        char fileData[BLOCK_SIZE];
+        int fileDatalen = read(sockfd, fileData, blockSize);
+        if (fileDatalen < 0)
+        {
+            perror("read");
+            exit(1);
+        }
+        fwrite(fileData, sizeof(char), fileDatalen, file);
+        if (fileDatalen > 0)
+            sizeToRead -= fileDatalen;
+    }
+    fclose(file);
 }
