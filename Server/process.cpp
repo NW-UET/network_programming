@@ -307,6 +307,7 @@ int checkFiles(sqlite3* db,struct File f,vector<int>* ids,int host){
     int rc;
     const char* sql;
     //0
+    int numOfID=ids->size();
     string query;
     query="select id from files where md5='"+md5+"' and host="+to_string(host)+";";
     sql = query.c_str();
@@ -318,11 +319,11 @@ int checkFiles(sqlite3* db,struct File f,vector<int>* ids,int host){
     }else{
         fprintf(stdout, "Operation done successfully\n");
     }
-    if(ids->size()>0) {
+    if(ids->size()-numOfID>0) {
         printf("checked files! Return 0\n");
         return 0;
     }
-    //1
+    //1,3
     query="select id from files where filename = '"+f.filename+"' and host="+to_string(host)+";";
     sql = query.c_str();
     vector<int> ret;
