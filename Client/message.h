@@ -28,9 +28,9 @@
 using namespace std;
 
 /* hàm Write viết lại, luôn cố gắng viết được n bytes */
-void Write(int sockfd, const void *buff, size_t n);
+ssize_t Write(int sockfd, const void *buff, size_t n);
 /* hàm Read viết lại, luôn cố gắng đọc được n bytes */
-void Read(int sockfd, void *buff, size_t n);
+ssize_t Read(int sockfd, void *buff, size_t n);
 /* hàm ReadHeader sẽ đọc Header của thông báo và trả về kiểu của thông báo đó */
 uint8_t ReadHeader(int sockfd);
 /* viết kiểu của thông báo dưới dạng chữ, trả về xâu rỗng nếu ko đúng bất kỳ kiểu nào */
@@ -175,6 +175,7 @@ struct DownloadFileRequest
 struct DownloadFileResponse
 {
     uint8_t type = DOWNLOAD_FILE_RESPONSE;
+    uint8_t status;
     int Write(int sockfd);
     int Read(int sockfd);
     int ReadPayload(int sockfd);

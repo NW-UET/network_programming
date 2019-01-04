@@ -84,10 +84,10 @@ int FileListUpdateRequest::ReadPayload(int sockfd)
 int FileListUpdateRequest::Read(int sockfd)
 {
     uint8_t type = ::ReadHeader(sockfd);
-	if (this->type == type)
-		this->ReadPayload(sockfd);
+    if (this->type == type)
+        this->ReadPayload(sockfd);
 
-	return type;
+    return type;
 }
 
 void FileListUpdateRequest::print()
