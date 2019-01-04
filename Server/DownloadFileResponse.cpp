@@ -5,7 +5,7 @@ using namespace std;
 int DownloadFileResponse::Write(int sockfd)
 {
 	// size
-	size_t size = sizeof(this->type);
+	size_t size = sizeof(this->type) + sizeof(this->status);
 	// allocate memory
 	char *begin = (char *)malloc(size);
 	bzero((void *)begin, size);
@@ -13,6 +13,9 @@ int DownloadFileResponse::Write(int sockfd)
 	// type
 	memcpy(ptr, &this->type, sizeof(this->type));
 	ptr = ptr + sizeof(this->type);
+	// status
+	memcpy(ptr, &this->status, sizeof(this->status));
+    ptr = ptr + sizeof(this->status);
 	// send packet
 	::Write(sockfd, begin, size);
 
@@ -21,6 +24,8 @@ int DownloadFileResponse::Write(int sockfd)
 
 int DownloadFileResponse::ReadPayload(int sockfd)
 {
+	// status
+	::Read(sockfd, &this->status, sizeof(this->status));
 	return 0;
 }
 
@@ -36,5 +41,6 @@ int DownloadFileResponse::Read(int sockfd)
 void DownloadFileResponse::print()
 {
 	cout << "type = " << typeString(this->type) << endl;
+	printf("status = %d\n",this->status);
 	printf("----\n");
 }

@@ -1,6 +1,6 @@
 #include "message.h"
 
-void Write(int sockfd, const void *buff, size_t n)
+ssize_t Write(int sockfd, const void *buff, size_t n)
 {
     size_t bytesWriten = 0;
     size_t bytesToWrite = n;
@@ -11,42 +11,45 @@ void Write(int sockfd, const void *buff, size_t n)
         {
             perror("write");
             exit(1);
+            // return bytesWritenThisTime;
         }
         if (bytesWritenThisTime == 0)
         {
             printf("Writing socket was closed\n");
-            break;
+            return 0;
         }
         if (bytesWritenThisTime > 0)
         {
             bytesWriten += bytesWritenThisTime;
         }
     }
+    return bytesWriten;
 }
 
-void Read(int sockfd, void *buff, size_t n)
+ssize_t Read(int sockfd, void *buff, size_t n)
 {
     size_t bytesRead = 0;
     size_t bytesToRead = n;
     while (bytesRead != bytesToRead)
     {
         ssize_t bytesReadThisTime = read(sockfd, (char *)buff + bytesRead, (bytesToRead - bytesRead));
-        if (errno == EWOULDBLOCK) return;
         if (bytesReadThisTime < 0)
         {
             perror("read");
             exit(1);
+            // return bytesReadThisTime;
         }
         if (bytesReadThisTime == 0)
         {
             printf("Reading socket was closed\n");
-            break;
+            return 0;
         }
         if (bytesReadThisTime > 0)
         {
             bytesRead += bytesReadThisTime;
         }
     }
+    return bytesRead;
 }
 
 uint8_t ReadHeader(int sockfd)

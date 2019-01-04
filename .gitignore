@@ -3,4 +3,4 @@
 client
 server
 Client/Download/*
-*.db
+files.db
