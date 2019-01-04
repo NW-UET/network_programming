@@ -424,7 +424,7 @@ static void *requestThread(void *arg)
                 cout << "Download failed" << endl;
             }
             pthread_detach(pthread_self());
-            //fileListUpdate(servaddr);
+            fileListUpdate(servaddr);
             break;
         }
         default:

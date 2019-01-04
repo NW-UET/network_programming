@@ -247,10 +247,10 @@ vector<int> selectAllFiles(sqlite3* db, int host){
     }else{
         fprintf(stdout, "Operation done successfully\n");
     }
-    printf("selected all files! Return = \n");
-    for(int e:idOfData){
-        printf("id = %d\n",e);
-    }
+    printf("selected all files!\n");
+    // for(int e:idOfData){
+    //     printf("id = %d\n",e);
+    // }
     return idOfData;
 }
 int selectAllFiles(sqlite3* db,struct ListFilesResponse* res){
@@ -291,25 +291,26 @@ int selectHosts(sqlite3* db,struct Filename filename,struct ListHostsResponse* r
 /**
  * checkFiles
  * 0: co trong goi tin, co trong csdl (giong md5)
- * 1: co trong goi tin, khong co trong csdl nhung trung ten
+ * 1: co trong goi tin, khong co trong csdl nhung trung ten, tren host khac con file co ten giong file nay
+ * 3: co trong goi tin, khong co trong csdl nhung trung ten, tren host khac khong con file ten giong file nay
  * 2: co trong goi tin, khong co trong csdl khac ten
  */
-int checkFiles(sqlite3* db,struct File f,vector<int>* ids){
+int checkFiles(sqlite3* db,struct File f,vector<int>* ids,int host){
     //code
     // vector<int> idReturned;
     printf("check files...\n");
     char md5_32[32];
     md5_16_to_md5_32(f.md5,md5_32);
     string md5=char_to_hexa(md5_32);
-    cout<<"md5: "<<md5<<endl;
+    // cout<<"md5: "<<md5<<endl;
     char *zErrMsg = 0;
     int rc;
     const char* sql;
     //0
     string query;
-    query="select id from files where md5='"+md5+"';";
+    query="select id from files where md5='"+md5+"' and host="+to_string(host)+";";
     sql = query.c_str();
-    printf("%s\n",sql);
+    // printf("%s\n",sql);
     rc = sqlite3_exec(db,sql,callbackCheck,(void*)ids,&zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -322,18 +323,34 @@ int checkFiles(sqlite3* db,struct File f,vector<int>* ids){
         return 0;
     }
     //1
-    query="select id from files where filename = '"+f.filename+"' and md5!='"+md5+"';";
+    query="select id from files where filename = '"+f.filename+"' and host="+to_string(host)+";";
     sql = query.c_str();
-    rc = sqlite3_exec(db,sql,callbackCheck,(void*)&ids,&zErrMsg);
+    vector<int> ret;
+    rc = sqlite3_exec(db,sql,callbackCheck,(void*)&ret,&zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }else{
         fprintf(stdout, "Operation done successfully\n");
     }
-    if(ids->size()>0) {
-        printf("checked files! Return 1\n");
-        return 1;
+    if(ret.size()>0) {
+        vector<int> ret;
+        query="select id from files where filename='"+f.filename+"';";
+        sql = query.c_str();
+        rc = sqlite3_exec(db,sql,callbackCheck,(void*)&ret,&zErrMsg);
+        if( rc != SQLITE_OK ){
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            sqlite3_free(zErrMsg);
+        }else{
+            fprintf(stdout, "Operation done successfully\n");
+        }
+        if(ret.size()==1){
+            printf("checked files! Return 3\n");
+            return 3;
+        }else{
+            printf("checked files! Return 1\n");
+            return 1;
+        }
     }
     printf("checked files! Return 2\n");
     return 2;
@@ -396,11 +413,14 @@ struct FileListUpdateResponse processFileListUpdate(struct FileListUpdateRequest
         Filestatus filestatus_temp;
         filestatus_temp.filename=a.filename;
         filestatus_temp.filename_length=a.filename_length;
-        int kqcheck=checkFiles(db,a,&idNotDelete);
+        int kqcheck=checkFiles(db,a,&idNotDelete,addr);
         if(kqcheck==1){
             filestatus_temp.status=1;
         }else if(kqcheck==0){
             filestatus_temp.status=0;
+        }else if(kqcheck==3){
+            filestatus_temp.status=0;
+            insertFiles(db,a,addr);
         }else{
             filestatus_temp.status=0;
             insertFiles(db,a,addr);
@@ -443,6 +463,7 @@ struct ListFilesResponse processListFilesRequest(struct ListFilesRequest package
 
 struct ListHostsResponse processListHostsRequest(struct ListHostsRequest package){
     struct ListHostsResponse res;
+    res.file_size=0;
     sqlite3* db=connectDb("files.db");
     struct Filename filename=package.filename;
     selectHosts(db,filename,&res);
