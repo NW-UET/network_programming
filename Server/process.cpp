@@ -369,7 +369,7 @@ int deleteFiles(sqlite3* db,int host){
     }
 }
 int deleteFiles(sqlite3* db,int id,int host){
-    string query="delete from files where id="+to_string(id)+";";
+    string query="delete from files where id="+to_string(id)+" and host="+to_string(host)+";";
     const char* sql = query.c_str();
     char *zErrMsg = 0;
     int rc;
