@@ -104,6 +104,7 @@ static void *doit(void *arg){
 
 	int newfd= newArg->fd;
     sockaddr_in cliaddr=newArg->cliaddr;
+    printf("client: %d\n",cliaddr.sin_addr.s_addr);
 	pthread_detach(pthread_self());
 	free(arg);
     //read data received
@@ -112,35 +113,31 @@ static void *doit(void *arg){
     if(type==0){
         struct FileListUpdateRequest package0;
         package0.ReadPayload(newfd);
-        
+        package0.print();
         struct FileListUpdateResponse package1;
         package1=processFileListUpdate(package0,cliaddr.sin_addr.s_addr);
-
+        package1.print();
+        package1.Write(newfd);
         close(newfd);
         return NULL;
     }else if(type==2){
+        struct ListFilesRequest package0;
+        package0.ReadPayload(newfd);
+        package0.print();
         struct ListFilesResponse package3;
-        package3.n_files=1;
-        Filesize temp;
-        temp.filename_length=1;
-        temp.filename="a";
-        temp.file_size=1;
-        package3.filesize_list.push_back(temp);
+        package3=processListFilesRequest(package0);
+        package3.print();
         package3.Write(newfd);
         close(newfd);
         return NULL;
     }else if(type ==4){
-		struct ListHostsRequest package6;
-		package6.ReadPayload(newfd);
-		package6.print();
+		struct ListHostsRequest package0;
+        package0.ReadPayload(newfd);
+        package0.print();
         struct ListHostsResponse package5;
-		package5.file_size = 15;
-        package5.n_hosts=3;
-        package5.IP_addr_list.push_back(inet_addr("127.0.0.1"));
-		package5.IP_addr_list.push_back(inet_addr("127.0.0.1"));
-        package5.IP_addr_list.push_back(inet_addr("192.156.0.2"));
-		package5.print();
-		package5.Write(newfd);
+        package5=processListHostsRequest(package0);
+        package5.print();
+        package5.Write(newfd);
         close(newfd);
         return NULL;
     }else{
