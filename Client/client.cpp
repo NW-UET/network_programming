@@ -8,6 +8,10 @@
 #include <limits>
 
 #define BLOCK_SIZE 2048
+#define END_HOST_PORT 9876
+#define END_HOST_ADDR "127.0.0.1"
+#define SERVER_PORT 6789
+#define N_SHARDS 4
 
 static void *requestThread(void *arg);
 static void *responseThread(void *arg);
@@ -50,9 +54,9 @@ int main(int argc, char const *argv[])
     /* bind socket 'serverfd' to socket address */
     struct sockaddr_in servaddr; /* server socket addr */
     bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;                     /* use the Internet addr family */
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); /* use localhost addr*/
-    servaddr.sin_port = htons(9876);                   /* bind ‘serverfd’ to port 9876 */
+    servaddr.sin_family = AF_INET;                       /* use the Internet addr family */
+    servaddr.sin_addr.s_addr = inet_addr(END_HOST_ADDR); /* use localhost addr*/
+    servaddr.sin_port = htons(END_HOST_PORT);            /* bind ‘serverfd’ to port 9876 */
     if (bind(serverfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
         perror("bind");
@@ -123,7 +127,7 @@ void fileListUpdate(struct sockaddr_in servaddr)
             if (is_regular_file((dir + "/" + file.filename).c_str()))
             {
                 FILE *inFile = fopen((dir + "/" + file.filename).c_str(), "rb");
-                cout << file.filename << endl;
+                // cout << file.filename << endl;
                 if (inFile == NULL)
                 {
                     printf("%s can't be opened.\n", file.filename.c_str());
@@ -159,7 +163,20 @@ void fileListUpdate(struct sockaddr_in servaddr)
         file_list_update_request.n_files = count;
         /*send to server*/
         file_list_update_request.Write(sockfd);
-        file_list_update_request.print();
+        // file_list_update_request.print();
+        /*receive from server*/
+        FileListUpdateResponse file_list_update_response;
+        file_list_update_response.Read(sockfd);
+        vector<Filestatus> filestatus_list = file_list_update_response.filestatus_list;
+        for (vector<Filestatus>::iterator it = filestatus_list.begin(); it != filestatus_list.end(); ++it)
+        {
+            if (it->status == 0)
+                cout << it->filename << "......."
+                     << "OK" << endl;
+            else
+                cout << it->filename << "......."
+                     << "Error" << endl;
+        }
     }
     /* close the socket */
     close(sockfd);
@@ -201,7 +218,7 @@ static void *requestThread(void *arg)
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;                                 /* use the Internet addr family */
     servaddr.sin_addr.s_addr = inet_addr(serverIPAddress.c_str()); /* connect to server's IP */
-    servaddr.sin_port = htons(6789);                               /* use server's port 6789 */
+    servaddr.sin_port = htons(SERVER_PORT);                        /* use server's port 6789 */
     while (1)
     {
         cout << "Input your action:" << endl;
@@ -280,7 +297,7 @@ static void *requestThread(void *arg)
             // receive file
             offset = 0;
             // n_shards = min((uint8_t)2, n_hosts);
-            n_shards = 4;
+            n_shards = N_SHARDS;
             vector<pthread_t> dlthread_list;
             uint8_t count = 0;
             uint8_t failed_hosts = 0;
@@ -289,6 +306,7 @@ static void *requestThread(void *arg)
             {
                 host_status_list[i] = true;
             }
+            cout << "Downloading.." << flush;
             while (failed_hosts < n_hosts && count != n_shards)
             {
                 for (size_t i = 0; i < addr_list.size(); i++)
@@ -345,7 +363,7 @@ static void *requestThread(void *arg)
             }
             if (count == n_shards)
             {
-                cout << "Merging.." << endl;
+                cout << "Done\nMerging.." << flush;
                 // append file
                 // open wfile
                 string wfilePath = "Share/" + filename;
@@ -408,23 +426,27 @@ static void *requestThread(void *arg)
                 }
                 else
                     error = true;
+                cout << "Done" << endl;
                 clock_t stop = clock();
                 int microsecs = (stop - start) * 1000000 / CLOCKS_PER_SEC;
                 printf("Download time: %d.%d milliseconds\n", microsecs / 1000, microsecs % 1000);
                 if (error)
-                    cout << "Download failed" << endl;
+                    cout << "Merge failed" << endl;
                 else
-                    cout << "Download complete. Please update your file list" << endl;
+                {
+                    cout << "Download complete. Update your file list" << endl;
+                    fileListUpdate(servaddr);
+                }
             }
             else
             {
+                cout << "Done" << endl;
                 clock_t stop = clock();
                 int microsecs = (stop - start) * 1000000 / CLOCKS_PER_SEC;
                 printf("Download time: %d.%d milliseconds\n", microsecs / 1000, microsecs % 1000);
                 cout << "Download failed" << endl;
             }
             pthread_detach(pthread_self());
-            fileListUpdate(servaddr);
             break;
         }
         default:
