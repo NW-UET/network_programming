@@ -134,7 +134,7 @@ void md5_32_to_md5_16(char a[32],unsigned char b[16]){
 // using namespace std;
 //(arg 4th cua exec(),so cot, mang gia tri, mang ten cot)
 int callback0(void *NotUsed, int argc, char **argv, char **azColName){
-   printf("deleted\n");
+   printf("select\n");
    for(int i=0; i<argc; i++){
       printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
    }
@@ -180,9 +180,41 @@ int callbackCheck(void *data, int argc, char **argv, char **azColName){
 int callbackSelect(void *data, int argc, char **argv, char **azColName){
     vector<int>* numOfData=(vector<int>*)data;
     for(int i=0;i<argc;i++){
-        if(strcmp(azColName[i],"id")){
+        if(strcmp(azColName[i],"id")==0){
+            // printf("id= %s\n",argv[i]);
             numOfData->push_back(atoi(argv[i]));
         }
+    }
+    return 0;
+}
+int callbackSelectAll(void *data, int argc, char **argv, char **azColName){
+    struct ListFilesResponse* res=(struct ListFilesResponse*)data;
+    struct Filesize temp;
+    for(int i=0;i<argc;i++){
+        // printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+        
+        if(strcmp(azColName[i],"filename")==0){
+            temp.filename=argv[i];
+            temp.filename_length=temp.filename.length();
+        }else if(strcmp(azColName[i],"size")==0){
+            temp.file_size=atoi(argv[i]);
+        }
+    }
+    res->filesize_list.push_back(temp);
+    return 0;
+}
+int callbackSelectHosts(void *data, int argc, char **argv, char **azColName){
+    struct ListHostsResponse* res=(struct ListHostsResponse*)data;
+    uint32_t temp;
+    for(int i=0;i<argc;i++){
+        // printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+        
+        if(strcmp(azColName[i],"size")==0){
+            res->file_size=atoi(argv[i]);
+        }else if(strcmp(azColName[i],"host")==0){
+            res->IP_addr_list.push_back(atoi(argv[i]));
+        }
+        
     }
     return 0;
 }
@@ -202,6 +234,7 @@ sqlite3* connectDb(char a[]){
 }
 // tra ve id neu ten file trung nhung md5 khong trung, 0 trong th con lai
 vector<int> selectAllFiles(sqlite3* db, int host){
+    printf("select all files...Host: %d\n",host);
     string query="select * from files where host = "+ to_string(host);
     const char* sql = query.c_str();
     char *zErrMsg = 0;
@@ -214,7 +247,46 @@ vector<int> selectAllFiles(sqlite3* db, int host){
     }else{
         fprintf(stdout, "Operation done successfully\n");
     }
+    printf("selected all files! Return = \n");
+    for(int e:idOfData){
+        printf("id = %d\n",e);
+    }
     return idOfData;
+}
+int selectAllFiles(sqlite3* db,struct ListFilesResponse* res){
+    printf("select all files...\n");
+    string query="select * from files;";
+    const char* sql = query.c_str();
+    char *zErrMsg = 0;
+    int rc;
+    
+    rc = sqlite3_exec(db,sql,callbackSelectAll,(void*)res,&zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }else{
+        fprintf(stdout, "Operation done successfully\n");
+    }
+    res->n_files=res->filesize_list.size();
+    printf("selected all files!\n");
+}
+int selectHosts(sqlite3* db,struct Filename filename,struct ListHostsResponse* res){
+    printf("select host...\n");
+    string query="select * from files where filename='"+filename.filename+"';";
+    const char* sql = query.c_str();
+    char *zErrMsg = 0;
+    int rc;
+    
+    
+    rc = sqlite3_exec(db,sql,callbackSelectHosts,(void*)res,&zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }else{
+        fprintf(stdout, "Operation done successfully\n");
+    }
+    res->n_hosts=res->IP_addr_list.size();
+    printf("selected host!\n");
 }
 /**
  * checkFiles
@@ -225,9 +297,11 @@ vector<int> selectAllFiles(sqlite3* db, int host){
 int checkFiles(sqlite3* db,struct File f,vector<int>* ids){
     //code
     // vector<int> idReturned;
+    printf("check files...\n");
     char md5_32[32];
     md5_16_to_md5_32(f.md5,md5_32);
     string md5=char_to_hexa(md5_32);
+    cout<<"md5: "<<md5<<endl;
     char *zErrMsg = 0;
     int rc;
     const char* sql;
@@ -235,6 +309,7 @@ int checkFiles(sqlite3* db,struct File f,vector<int>* ids){
     string query;
     query="select id from files where md5='"+md5+"';";
     sql = query.c_str();
+    printf("%s\n",sql);
     rc = sqlite3_exec(db,sql,callbackCheck,(void*)ids,&zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -242,7 +317,10 @@ int checkFiles(sqlite3* db,struct File f,vector<int>* ids){
     }else{
         fprintf(stdout, "Operation done successfully\n");
     }
-    if(ids->size()>0) return 0;
+    if(ids->size()>0) {
+        printf("checked files! Return 0\n");
+        return 0;
+    }
     //1
     query="select id from files where filename = '"+f.filename+"' and md5!='"+md5+"';";
     sql = query.c_str();
@@ -253,7 +331,11 @@ int checkFiles(sqlite3* db,struct File f,vector<int>* ids){
     }else{
         fprintf(stdout, "Operation done successfully\n");
     }
-    if(ids->size()>0) return 1;
+    if(ids->size()>0) {
+        printf("checked files! Return 1\n");
+        return 1;
+    }
+    printf("checked files! Return 2\n");
     return 2;
 }
 int deleteFiles(sqlite3* db,int host){
@@ -285,9 +367,9 @@ int deleteFiles(sqlite3* db,int id,int host){
 int insertFiles(sqlite3* db,struct File f, int host){
     string filename=f.filename;//
     uint64_t size=f.file_size;//
-    unsigned char md5_16[]={212,29,140,217,143,0,178,4,233,128,9,152,236,248,66,126};
+    // unsigned char md5_16[];
     char md5_32[32];
-    md5_16_to_md5_32(md5_16,md5_32);//f.md5
+    md5_16_to_md5_32(f.md5,md5_32);//f.md5
     string md5=char_to_hexa(md5_32);
     char *zErrMsg = 0;
     // insert into files(filename,size,md5,host) values ('filename',1024,'123456789efab56',12345);";
@@ -308,24 +390,34 @@ struct FileListUpdateResponse processFileListUpdate(struct FileListUpdateRequest
     char *zErrMsg = 0;
     int n=package.n_files;
     vector<File> dataDb=package.file_list;
-    int temp=0;
     vector<int> idFiles=selectAllFiles(db,addr);
     vector<int> idNotDelete;
     for(struct File a: dataDb){
-        res.filestatus_list.at(temp).filename=a.filename;
-        res.filestatus_list.at(temp).filename_length=a.filename_length;
+        Filestatus filestatus_temp;
+        filestatus_temp.filename=a.filename;
+        filestatus_temp.filename_length=a.filename_length;
         int kqcheck=checkFiles(db,a,&idNotDelete);
         if(kqcheck==1){
-            res.filestatus_list.at(temp).status=1;
+            filestatus_temp.status=1;
         }else if(kqcheck==0){
-            res.filestatus_list.at(temp).status=0;
+            filestatus_temp.status=0;
         }else{
-            res.filestatus_list.at(temp).status=0;
+            filestatus_temp.status=0;
             insertFiles(db,a,addr);
         }
-        temp++;
+        res.filestatus_list.push_back(filestatus_temp);
     }
     //delete
+    printf("idFiles\n");
+    for(int i:idFiles){
+        printf("%d ",i);
+    }
+    printf("\n");
+    printf("idNotDelete\n");
+    for(int i:idNotDelete){
+        printf("%d ",i);
+    }
+    printf("\n");
     for(int i=0;i<idFiles.size();i++){
         for(int j=0;j<idNotDelete.size();j++){
             if(idFiles.at(i)==idNotDelete.at(j)){
@@ -343,9 +435,16 @@ struct FileListUpdateResponse processFileListUpdate(struct FileListUpdateRequest
 }
 
 struct ListFilesResponse processListFilesRequest(struct ListFilesRequest package){
-
+    struct ListFilesResponse res;
+    sqlite3* db=connectDb("files.db");
+    selectAllFiles(db,&res);
+    return res;
 }
 
 struct ListHostsResponse processListHostsRequest(struct ListHostsRequest package){
-
+    struct ListHostsResponse res;
+    sqlite3* db=connectDb("files.db");
+    struct Filename filename=package.filename;
+    selectHosts(db,filename,&res);
+    return res;
 }
