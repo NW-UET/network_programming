@@ -205,7 +205,6 @@ int createRequestSocket(const struct sockaddr_in *servaddr)
     if (connect(sockfd, (struct sockaddr *)servaddr, sizeof(*servaddr)) < 0)
     {
         perror("connect");
-        exit(1);
     }
     return sockfd;
 }
@@ -326,6 +325,12 @@ static void *requestThread(void *arg)
                         // create arg
                         FileToDownload *ftd = (FileToDownload *)malloc(sizeof(FileToDownload));
                         ftd->sockfd = createRequestSocket(&dlhost);
+                        if (errno == EHOSTUNREACH || errno == ECONNREFUSED || errno == EINTR)
+                        {
+                            host_status_list[i] = false;
+                            failed_hosts++;
+                            continue;
+                        }
                         ftd->offset = offset;
                         ftd->filename_ptr = new string(filename);
                         ftd->shardId = count;
@@ -382,7 +387,7 @@ static void *requestThread(void *arg)
                         FILE *rfile = fopen(rfilePath.c_str(), "rb");
                         if (rfile == NULL)
                         {
-                            perror("Error");
+                            perror("Open Shard Error");
                             error = true;
                         }
                         // get size
