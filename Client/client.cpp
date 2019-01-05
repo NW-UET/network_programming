@@ -10,7 +10,7 @@
 #define BILLION 1E9
 #define BLOCK_SIZE 2048
 #define END_HOST_PORT 9876
-#define END_HOST_ADDR "192.168.43.231"
+#define END_HOST_ADDR "10.10.1.66"
 #define SERVER_PORT 6789
 #define N_SHARDS 4
 
@@ -325,7 +325,7 @@ static void *requestThread(void *arg)
                         // create arg
                         FileToDownload *ftd = (FileToDownload *)malloc(sizeof(FileToDownload));
                         ftd->sockfd = createRequestSocket(&dlhost);
-                        if (errno == EHOSTUNREACH || errno == ECONNREFUSED || errno == EINTR)
+                        if (errno == EHOSTUNREACH || errno == ECONNREFUSED || errno == EINTR || errno == ETIMEDOUT)
                         {
                             host_status_list[i] = false;
                             failed_hosts++;
