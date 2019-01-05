@@ -114,30 +114,37 @@ static void *doit(void *arg){
     if(type==0){
         struct FileListUpdateRequest package0;
         package0.ReadPayload(newfd);
-        package0.print();
+        // package0.print();
         struct FileListUpdateResponse package1;
         package1=processFileListUpdate(package0,cliaddr.sin_addr.s_addr);
-        package1.print();
+        // package1.print();
+        printf("--List files in host--\n");
+        int stt=0;
+        for(int i=0;i<package1.n_files;i++){
+            if(package1.filestatus_list.at(i).status==0){
+                printf("%d\t: %s\n",stt++,package1.filestatus_list.at(i).filename.c_str());
+            }
+        }
         package1.Write(newfd);
         close(newfd);
         return NULL;
     }else if(type==2){
         struct ListFilesRequest package0;
         package0.ReadPayload(newfd);
-        package0.print();
+        // package0.print();
         struct ListFilesResponse package3;
         package3=processListFilesRequest(package0);
-        package3.print();
+        // package3.print();
         package3.Write(newfd);
         close(newfd);
         return NULL;
     }else if(type ==4){
 		struct ListHostsRequest package0;
         package0.ReadPayload(newfd);
-        package0.print();
+        // package0.print();
         struct ListHostsResponse package5;
         package5=processListHostsRequest(package0);
-        package5.print();
+        // package5.print();
         package5.Write(newfd);
         close(newfd);
         return NULL;
