@@ -7,9 +7,10 @@
 #include <openssl/md5.h>
 #include <limits>
 
+#define BILLION 1E9
 #define BLOCK_SIZE 2048
 #define END_HOST_PORT 9876
-#define END_HOST_ADDR "127.0.0.1"
+#define END_HOST_ADDR "192.168.43.231"
 #define SERVER_PORT 6789
 #define N_SHARDS 4
 
@@ -266,7 +267,9 @@ static void *requestThread(void *arg)
             cin >> filename;
             int sockfd = createRequestSocket(&servaddr);
             // set clock
-            clock_t start = clock();
+            // clock_t start = clock();
+            struct timespec requestStart, requestEnd;
+            clock_gettime(CLOCK_REALTIME, &requestStart);
             // send list hosts request
             ListHostsRequest list_hosts_request;
             list_hosts_request.filename.filename = filename;
@@ -427,9 +430,13 @@ static void *requestThread(void *arg)
                 else
                     error = true;
                 cout << "Done" << endl;
-                clock_t stop = clock();
-                int microsecs = (stop - start) * 1000000 / CLOCKS_PER_SEC;
-                printf("Download time: %d.%d milliseconds\n", microsecs / 1000, microsecs % 1000);
+                // clock_t stop = clock();
+                // int microsecs = (stop - start) * 1000000 / CLOCKS_PER_SEC;
+                // printf("Download time: %d.%d milliseconds\n", microsecs / 1000, microsecs % 1000);
+                clock_gettime(CLOCK_REALTIME, &requestEnd);
+                double accum = (requestEnd.tv_sec - requestStart.tv_sec) +
+                               (requestEnd.tv_nsec - requestStart.tv_nsec) / BILLION;
+                printf("Download time: %lf seconds\n", accum);
                 if (error)
                     cout << "Merge failed" << endl;
                 else
@@ -441,9 +448,13 @@ static void *requestThread(void *arg)
             else
             {
                 cout << "Done" << endl;
-                clock_t stop = clock();
-                int microsecs = (stop - start) * 1000000 / CLOCKS_PER_SEC;
-                printf("Download time: %d.%d milliseconds\n", microsecs / 1000, microsecs % 1000);
+                // clock_t stop = clock();
+                // int microsecs = (stop - start) * 1000000 / CLOCKS_PER_SEC;
+                // printf("Download time: %d.%d milliseconds\n", microsecs / 1000, microsecs % 1000);
+                clock_gettime(CLOCK_REALTIME, &requestEnd);
+                double accum = (requestEnd.tv_sec - requestStart.tv_sec) +
+                               (requestEnd.tv_nsec - requestStart.tv_nsec) / BILLION;
+                printf("Download time: %lf seconds\n", accum);
                 cout << "Download failed" << endl;
             }
             pthread_detach(pthread_self());
