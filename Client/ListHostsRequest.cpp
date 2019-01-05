@@ -46,6 +46,7 @@ int ListHostsRequest::ReadPayload(int sockfd)
 
 int ListHostsRequest::Read(int sockfd)
 {
+	// read header
     uint8_t type = ::ReadHeader(sockfd);
 	if (this->type == type)
 		this->ReadPayload(sockfd);
@@ -57,8 +58,6 @@ void ListHostsRequest::print()
 {
     cout << "type = " << typeString(this->type) << endl;
     printf("filename_length = %d\n", this->filename.filename_length);
-    printf("filename = ");
-    string filename = this->filename.filename;
-    cout << filename << endl;
-    printf("----\n");
+    cout << "filename = " << this->filename.filename;
+    printf("\n----\n");
 }

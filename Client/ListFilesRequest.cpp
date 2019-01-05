@@ -4,6 +4,7 @@ using namespace std;
 
 int ListFilesRequest::Write(int sockfd)
 {
+	// size
     size_t size = sizeof(this->type);
     // allocate memory
     char *begin = (char *)malloc(size);
@@ -20,11 +21,13 @@ int ListFilesRequest::Write(int sockfd)
 
 int ListFilesRequest::ReadPayload(int sockfd)
 {
+	// no payload
     return 0;
 }
 
 int ListFilesRequest::Read(int sockfd)
 {
+	// read header
     uint8_t type = ::ReadHeader(sockfd);
 	if (this->type == type)
 		this->ReadPayload(sockfd);
@@ -34,6 +37,6 @@ int ListFilesRequest::Read(int sockfd)
 
 void ListFilesRequest::print()
 {
-    cout << "type = " << typeString(this->type) << endl;
-    printf("----\n");
+    cout << "type = " << typeString(this->type);
+    printf("\n----\n");
 }

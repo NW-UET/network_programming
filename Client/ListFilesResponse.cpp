@@ -49,6 +49,7 @@ int ListFilesResponse::ReadPayload(int sockfd)
 {
     // n_files
     ::Read(sockfd, &this->n_files, sizeof(this->n_files));
+	
     // filesize_list
     for (int k = 0; k < this->n_files; k++)
     {
@@ -76,6 +77,7 @@ int ListFilesResponse::ReadPayload(int sockfd)
 
 int ListFilesResponse::Read(int sockfd)
 {
+	// read header
     uint8_t type = ::ReadHeader(sockfd);
 	if (this->type == type)
 		this->ReadPayload(sockfd);
@@ -91,9 +93,7 @@ void ListFilesResponse::print()
     for (vector<Filesize>::iterator it = filesize_list.begin(); it != filesize_list.end(); ++it)
     {
         printf("filename_length = %d\n", it->filename_length);
-        string filename = it->filename;
-        printf("filename = ");
-        cout << filename << endl;
+        cout << "filename = " << it->filename<< endl;
         printf("file_size = %ld\n", it->file_size);
     }
     printf("----\n");

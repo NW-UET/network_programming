@@ -60,6 +60,7 @@ int ListHostsResponse::ReadPayload(int sockfd)
 
 int ListHostsResponse::Read(int sockfd)
 {
+	// read header
     uint8_t type = ::ReadHeader(sockfd);
     if (this->type == type)
         this->ReadPayload(sockfd);

@@ -83,6 +83,7 @@ int FileListUpdateRequest::ReadPayload(int sockfd)
 
 int FileListUpdateRequest::Read(int sockfd)
 {
+	// read header
     uint8_t type = ::ReadHeader(sockfd);
     if (this->type == type)
         this->ReadPayload(sockfd);
@@ -98,15 +99,12 @@ void FileListUpdateRequest::print()
     for (vector<File>::iterator it = file_list.begin(); it != file_list.end(); ++it)
     {
         printf("filename_length = %d\n", it->filename_length);
-        string filename = it->filename;
-        printf("filename = ");
-        cout << filename;
-        printf("\n");
+        cout <<  "filename = " << it->filename << endl;
         printf("file_size = %ld\n", it->file_size);
-        printf("md5 = ");
+        cout << "md5 = ";
         for (int i = 0; i < 16; i++)
             printf("%0x", it->md5[i]);
-        printf("\n");
+        cout << endl;
     }
     printf("----\n");
 }
