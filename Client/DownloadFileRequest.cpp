@@ -64,6 +64,7 @@ int DownloadFileRequest::ReadPayload(int sockfd)
 
 int DownloadFileRequest::Read(int sockfd)
 {
+	// read header
 	uint8_t type = ::ReadHeader(sockfd);
 	if (this->type == type)
 		this->ReadPayload(sockfd);
@@ -75,10 +76,8 @@ void DownloadFileRequest::print()
 {
 	cout << "type = " << typeString(this->type) << endl;
 	printf("filename_length = %d\n", this->filename.filename_length);
-	printf("filename = ");
-	string filename = this->filename.filename;
-	cout << filename << endl;
+	cout << "filename = " << this->filename.filename << endl;
 	printf("offset = %d\n", this->offset);
-	printf("size = %ld\n", this->size);
-	printf("----\n");
+	printf("size = %ld", this->size);
+	printf("\n----\n");
 }
