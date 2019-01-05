@@ -255,7 +255,7 @@ vector<int> selectAllFiles(sqlite3* db, int host){
 }
 int selectAllFiles(sqlite3* db,struct ListFilesResponse* res){
     printf("select all files...\n");
-    string query="select * from files;";
+    string query="select distinct filename,size from files;";
     const char* sql = query.c_str();
     char *zErrMsg = 0;
     int rc;

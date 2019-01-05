@@ -58,8 +58,8 @@ int main(int argc, char const *argv[])
 	bzero(&sockaddr, sizeof(sockaddr));
 	sockaddr.sin_family=AF_INET;
 	sockaddr.sin_port=htons(6789);
-	sockaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
-	printf("%d\n%d\n",6789,inet_addr("127.0.0.1"));
+	sockaddr.sin_addr.s_addr=inet_addr("192.168.43.224");
+	printf("%d\n%d\n",6789,inet_addr("192.168.43.224"));
 	//bind
 	/*
 	
@@ -91,6 +91,7 @@ int main(int argc, char const *argv[])
         argOfDoit* arg=new argOfDoit;
         arg->fd=*newfd;
         arg->cliaddr=cliaddr;
+        printf("-- Connect to client: %d --\n",cliaddr.sin_addr.s_addr);
 		pthread_create(&tid,NULL,&doit,(void*)arg);
 
 		//printf("Client IP: %s\nClient Port: %d\n",inet_ntoa(cliaddr.sin_addr),cliaddr.sin_port);
